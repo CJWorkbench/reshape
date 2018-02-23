@@ -1,0 +1,26 @@
+{
+  "name": "Filter",
+  "id_name": "filter",
+  "description": "Keep or drop rows by condition",
+  "category" : "Analyse",
+  "icon": "filter",
+  "parameters": [
+    {
+      "name": "Filter by",
+      "id_name" : "column",
+      "type": "column"
+    },
+    {
+      "name": "Condition",
+      "id_name" : "condition",
+      "type" : "menu",
+      "menu_items" : "Text contains|Text does not contain|Text is exactly||Cell is empty|Cell is not empty||Equals|Greater than|Greater than or equals|Less than|Less than or equals||Date is|Date is before|Date is after",
+      "default": "0"
+    },
+    {
+      "name": "Value",
+      "id_name" : "value",
+      "type": "string"
+    }
+  ]
+}
