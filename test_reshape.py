@@ -29,34 +29,34 @@ class TestReshape(unittest.TestCase):
 
 
 	def test_defaults(self):
-		params = { 'direction': 0, 'columns': '', 'varcol':''}
+		params = { 'direction': 0, 'colnames': '', 'varcol':''}
 		out = render(self.wide1, params)
 		self.assertTrue(out.equals(self.wide1)) # should NOP when first applied
 
 	def test_wide_to_long(self):
-		params = { 'direction': 0, 'columns': 'date', 'varcol':''}
+		params = { 'direction': 0, 'colnames': 'date', 'varcol':''}
 		out = render(self.wide1, params)
 		self.assertTrue(out.equals(self.long1))
 
 	def test_wide_to_long_mulicolumn(self):
 		# two ID columns
-		params = { 'direction': 0, 'columns': 'idcol,date', 'varcol':''}
+		params = { 'direction': 0, 'colnames': 'idcol,date', 'varcol':''}
 		out = render(self.wide2, params)
 		self.assertTrue(out.equals(self.long2))
 
 	def test_long_to_wide(self):
-		params = { 'direction': 1, 'columns': 'date', 'varcol':'variable'}
+		params = { 'direction': 1, 'colnames': 'date', 'varcol':'variable'}
 		out = render(self.long1, params)
 		self.assertTrue(out.equals(self.wide1))
 
 	def test_long_to_wide_missing_varcol(self):
-		params = { 'direction': 1, 'columns': 'date', 'varcol':''}
+		params = { 'direction': 1, 'colnames': 'date', 'varcol':''}
 		out = render(self.long1, params)
 		self.assertTrue(out.equals(self.long1)) # nop if no column selected
 
 	def test_long_to_wide_mulicolumn(self):
 		# two ID columns
-		params = { 'direction': 1, 'columns': 'idcol,date', 'varcol':'variable'}
+		params = { 'direction': 1, 'colnames': 'idcol,date', 'varcol':'variable'}
 		out = render(self.long2, params)
 		self.assertTrue(out.equals(self.wide2))
 

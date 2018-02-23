@@ -2,7 +2,7 @@ def render(table, params):
     import pandas as pd
 
     diridx = params['direction']
-    cols = params['columns']
+    cols = params['colnames']
     varcol = params['varcol']
 
     # no columns selected, NOP
@@ -21,7 +21,7 @@ def render(table, params):
     else: # longtowide
         if varcol == '':            # gotta have this parameter
             return table       
-            
+
         table = table.set_index(cols + [varcol]).unstack()
 
         cols = [col[-1] for col in table.columns.values]

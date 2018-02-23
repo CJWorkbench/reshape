@@ -14,7 +14,7 @@
     },
     {
       "name": "Keep Columns",
-      "id_name": "columns",
+      "id_name": "colnames",
       "type": "multicolumn"
     },
     {
