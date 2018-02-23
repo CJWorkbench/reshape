@@ -1,26 +1,26 @@
 {
-  "name": "Filter",
-  "id_name": "filter",
-  "description": "Keep or drop rows by condition",
-  "category" : "Analyse",
+  "name": "Reshape",
+  "id_name": "reshape",
+  "description": "Convert between wide and long formats",
+  "category" : "Prepare",
   "icon": "filter",
   "parameters": [
     {
-      "name": "Filter by",
-      "id_name" : "column",
-      "type": "column"
-    },
-    {
-      "name": "Condition",
-      "id_name" : "condition",
+      "name": "Direction",
+      "id_name" : "direction",
       "type" : "menu",
-      "menu_items" : "Text contains|Text does not contain|Text is exactly||Cell is empty|Cell is not empty||Equals|Greater than|Greater than or equals|Less than|Less than or equals||Date is|Date is before|Date is after",
+      "menu_items" : "Wide to long|Long to wide",
       "default": "0"
     },
     {
-      "name": "Value",
-      "id_name" : "value",
-      "type": "string"
+      "name": "Keep Columns",
+      "id_name": "columns",
+      "type": "multicolumn"
+    },
+    {
+      "name": "Variable names column (long to wide only) ",
+      "id_name" : "varcol",
+      "type": "column"
     }
   ]
 }
