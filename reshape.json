@@ -3,7 +3,7 @@
   "id_name": "reshape",
   "description": "Convert between wide and long formats",
   "category" : "Prepare",
-  "icon": "filter",
+  "icon": "transform",
   "parameters": [
     {
       "name": "Direction",
