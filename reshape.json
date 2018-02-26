@@ -6,19 +6,19 @@
   "icon": "reshape",
   "parameters": [
     {
-      "name": "Direction",
+      "name": "",
       "id_name" : "direction",
       "type" : "menu",
       "menu_items" : "Wide to long|Long to wide",
       "default": "0"
     },
     {
-      "name": "Keep Columns",
+      "name": "Key column(s)",
       "id_name": "colnames",
       "type": "multicolumn"
     },
     {
-      "name": "Variable (long to wide) ",
+      "name": "Variables (wide to long only) ",
       "id_name" : "varcol",
       "type": "column"
     }
