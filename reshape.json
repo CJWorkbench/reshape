@@ -18,7 +18,7 @@
       "type": "multicolumn"
     },
     {
-      "name": "Variables (wide to long only) ",
+      "name": "Variable column(s)-(Wide only) ",
       "id_name" : "varcol",
       "type": "column"
     }
