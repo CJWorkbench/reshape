@@ -13,14 +13,14 @@
       "default": "0"
     },
     {
+      "name": "Variable (long to wide) ",
+      "id_name" : "varcol",
+      "type": "column"
+    },
+    {
       "name": "Keep Columns",
       "id_name": "colnames",
       "type": "multicolumn"
-    },
-    {
-      "name": "Variable names column (long to wide only) ",
-      "id_name" : "varcol",
-      "type": "column"
     }
   ]
 }
