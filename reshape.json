@@ -4,6 +4,7 @@
   "description": "Convert between wide and long formats",
   "category" : "Prepare",
   "icon": "reshape",
+  "help_url":"modules/prepare/reshape",
   "parameters": [
     {
       "name": "",
