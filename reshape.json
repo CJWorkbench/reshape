@@ -2,9 +2,9 @@
   "name": "Reshape",
   "id_name": "reshape",
   "description": "Convert between wide and long formats",
-  "category" : "Prepare",
+  "category" : "Clean",
   "icon": "reshape",
-  "help_url":"modules/prepare/reshape",
+  "help_url":"modules/clean/reshape",
   "parameters": [
     {
       "name": "",
