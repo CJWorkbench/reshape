@@ -14,9 +14,9 @@
       "default": "0"
     },
     {
-      "name": "Key column(s)",
+      "name": "Key column",
       "id_name": "colnames",
-      "type": "multicolumn"
+      "type": "column"
     },
     {
       "name": "Variable",
