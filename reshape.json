@@ -16,7 +16,20 @@
     {
       "name": "Key column",
       "id_name": "colnames",
-      "type": "column"
+      "type": "column",
+      "visible_if": {
+        "id_name": "direction",
+        "value": "Wide to long"
+      }
+    },
+    {
+      "name": "Key column",
+      "id_name": "colnames",
+      "type": "multicolumn",
+      "visible_if": {
+        "id_name": "direction",
+        "value": "Long to wide"
+      }
     },
     {
       "name": "Variable",
