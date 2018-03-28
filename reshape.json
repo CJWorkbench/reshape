@@ -24,7 +24,7 @@
       "type": "column",
       "visible_if": {
         "id_name": "direction",
-        "value": "wide to long"
+        "value": "Wide to long"
       }
     }
   ]
