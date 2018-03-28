@@ -19,9 +19,12 @@
       "type": "multicolumn"
     },
     {
-      "name": "Variable (Wide only) ",
+      "name": "Variable",
       "id_name" : "varcol",
       "type": "column"
+      "visible_if": {
+        "id_name": "direction",
+        "value": "wide to long"
     }
   ]
 }
