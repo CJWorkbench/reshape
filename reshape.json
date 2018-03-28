@@ -21,7 +21,7 @@
     {
       "name": "Variable",
       "id_name" : "varcol",
-      "type": "column"
+      "type": "column",
       "visible_if": {
         "id_name": "direction",
         "value": "wide to long"
