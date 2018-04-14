@@ -10,7 +10,7 @@
       "name": "",
       "id_name" : "direction",
       "type" : "menu",
-      "menu_items" : "Wide to long|Long to wide",
+      "menu_items" : "Wide to long|Long to wide|Transpose",
       "default": "0"
     },
     {

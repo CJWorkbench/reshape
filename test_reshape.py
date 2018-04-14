@@ -60,6 +60,27 @@ class TestReshape(unittest.TestCase):
 		out = render(self.long2, params)
 		self.assertTrue(out.equals(self.wide2))
 
+	def test_transpose(self):
+		# Input simulates a table with misplaced headers
+		in_table_data = {
+			'Name': ['Date', 'Attr'],
+			'Dolores': ['2018-04-22', 10],
+			'Robert': ['2016-10-02', None],
+			'Teddy': ['2018-04-22', 8]
+		}
+		ref_table_data = {
+			'Name': ['Dolores', 'Robert', 'Teddy'],
+			'Date': ['2016-04-22', '2016-10-02', '2018-04-22'],
+			'Attr': [10, None, 8]
+		}
+		in_table = pd.DataFrame(in_table_data, columns=['Name', 'Dolores', 'Robert', 'Teddy'])
+		ref_table = pd.DataFrame(ref_table_data, columns=['Name', 'Date', 'Attr'])
+		params = {'direction': 2}
+		out = render(in_table, params)
+		print(ref_table)
+		print(out)
+		self.assertTrue(out.equals(ref_table))
+
 
 if __name__ == '__main__':
 		unittest.main()
