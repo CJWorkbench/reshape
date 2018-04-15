@@ -16,7 +16,12 @@
     {
       "name": "Key column",
       "id_name": "colnames",
-      "type": "column"
+      "type": "column",
+      "visible_if": {
+        "id_name": "direction",
+        "value": "Transpose",
+        "invert": true
+      }
     },
     {
       "name": "Variable",

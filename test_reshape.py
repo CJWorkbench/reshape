@@ -4,7 +4,7 @@ from reshape import render
 
 
 class TestReshape(unittest.TestCase):
- 
+
 	def setUp(self):
 		# this data is designed to sorted in the way that our wide to long operation would sort
 		self.long1 = pd.DataFrame(
@@ -23,7 +23,7 @@ class TestReshape(unittest.TestCase):
 		idcol.name = 'idcol'
 		self.wide2 = pd.concat([idcol, self.wide1], axis=1)
 
-		self.long2 = pd.melt(self.wide2, id_vars=['idcol','date']) 
+		self.long2 = pd.melt(self.wide2, id_vars=['idcol','date'])
 		self.long2.sort_values(['idcol','date'], inplace=True)
 		self.long2 = self.long2.reset_index(drop=True)  # renumber after sort, don't add extra index col
 
@@ -70,15 +70,13 @@ class TestReshape(unittest.TestCase):
 		}
 		ref_table_data = {
 			'Name': ['Dolores', 'Robert', 'Teddy'],
-			'Date': ['2016-04-22', '2016-10-02', '2018-04-22'],
+			'Date': ['2018-04-22', '2016-10-02', '2018-04-22'],
 			'Attr': [10, None, 8]
 		}
 		in_table = pd.DataFrame(in_table_data, columns=['Name', 'Dolores', 'Robert', 'Teddy'])
 		ref_table = pd.DataFrame(ref_table_data, columns=['Name', 'Date', 'Attr'])
 		params = {'direction': 2}
 		out = render(in_table, params)
-		print(ref_table)
-		print(out)
 		self.assertTrue(out.equals(ref_table))
 
 

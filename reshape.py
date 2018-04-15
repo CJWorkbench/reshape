@@ -20,7 +20,7 @@ def render(table, params):
 
     elif dir == 'longtowide':
         if varcol == '':            # gotta have this parameter
-            return table       
+            return table
 
         table = table.set_index(cols + [varcol]).unstack()
 
@@ -29,11 +29,18 @@ def render(table, params):
         table = table.reset_index() # turn index cols into regular cols
 
     elif dir == 'transpose':
-        # We assume that the first column is going to be the new header rowi
-        new_columns = table[table.columns[0]].tolist()
+        # We assume that the first column is going to be the new header row
+        # Use the content of the first column (including header) as the new headers
+        new_columns = [table.columns[0]] + table[table.columns[0]].tolist()
         index_col = table.columns[0]
+        # Transpose table, reset index and correct column names
         table = table.set_index(index_col).transpose().reset_index()
         table.columns = new_columns
+        # Infer data type of each column (numeric or string)
+        for col in table.columns:
+            try:
+                table[col] = pd.to_numeric(table[col], errors='raise')
+            except:
+                table[col] = table[col].astype(str)
 
     return table
-
