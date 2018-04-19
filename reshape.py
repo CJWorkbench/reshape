@@ -22,11 +22,18 @@ def render(table, params):
         if varcol == '':            # gotta have this parameter
             return table
 
-        table = table.set_index(cols + [varcol]).unstack()
+        keys = cols
 
-        cols = [col[-1] for col in table.columns.values]
-        table.columns = cols        # get rid of multi-index hierarchy
-        table = table.reset_index() # turn index cols into regular cols
+        has_second_key = params.get('has_second_key', False)
+        # If second key is used and present, append it to the list of columns
+        if has_second_key:
+            second_key = params.get('second_key', '')
+            if second_key in table.columns:
+                keys.append(second_key)
+
+        table = table.set_index(keys + [varcol]).unstack()
+        table.columns = [col[-1] for col in table.columns.values]
+        table = table.reset_index()
 
     elif dir == 'transpose':
         # We assume that the first column is going to be the new header row

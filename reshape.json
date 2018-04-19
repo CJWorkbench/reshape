@@ -24,6 +24,24 @@
       }
     },
     {
+      "name": "",
+      "id_name": "second_key",
+      "type": "column",
+      "visible_if": {
+          "id_name": "use_second_key",
+          "value": true
+      }
+    },
+    {
+      "name": "2nd key",
+      "id_name": "use_second_key",
+      "type": "checkbox",
+      "visible_if": {
+          "id_name": "direction",
+          "value": "Long to wide"
+      }
+    },
+    {
       "name": "Variable",
       "id_name" : "varcol",
       "type": "column",
