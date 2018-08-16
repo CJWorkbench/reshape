@@ -5,6 +5,8 @@ def render(table, params):
     cols = params.get('colnames', '')
     varcol = params.get('varcol', '')
 
+    transpose_new_col_header = 'New Column'
+
     # no columns selected and not transpose, NOP
     if cols=='' and diridx != 2:
         return table
@@ -37,11 +39,24 @@ def render(table, params):
 
     elif dir == 'transpose':
         # We assume that the first column is going to be the new header row
-        # Use the content of the first column (including header) as the new headers
-        new_columns = [table.columns[0]] + table[table.columns[0]].tolist()
+        # Use the content of the first column as the new headers
+        # We set the first column header to 'New Column'. Using the old header is confusing.
+
+        # Check if Column Header Exists in Column
+        new_columns = table[table.columns[0]].tolist()
+        suffix = 1
+        while transpose_new_col_header in new_columns:
+            if f'{transpose_new_col_header}_{str(suffix)}' not in new_columns:
+                transpose_new_col_header = f'{transpose_new_col_header}_{str(suffix)}'
+                break
+            suffix += 1
+        new_columns = [transpose_new_col_header] + new_columns
         index_col = table.columns[0]
         # Transpose table, reset index and correct column names
-        table = table.set_index(index_col).transpose().reset_index()
+        table = table.set_index(index_col).transpose()
+        # Clear columns in case CategoricalIndex dtype
+        table.columns = ['']*len(table.columns)
+        table = table.reset_index()
         table.columns = new_columns
         # Infer data type of each column (numeric or string)
         for col in table.columns:

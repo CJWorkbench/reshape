@@ -120,9 +120,16 @@ class TestReshape(unittest.TestCase):
 			'Date': ['2018-04-22', '2016-10-02', '2018-04-22'],
 			'Attr': [10, None, 8]
 		}
-		in_table = pd.DataFrame(in_table_data, columns=['Name', 'Dolores', 'Robert', 'Teddy'])
+		# Cast as category
+		in_table = pd.DataFrame(in_table_data, columns=['Name', 'Dolores', 'Robert', 'Teddy']).astype('category')
 		ref_table = pd.DataFrame(ref_table_data, columns=['Name', 'Date', 'Attr'])
 		params = {'direction': 2}
+
+		# Keeping the old header for the first column can be confusing.
+		# First column header doesnt usually classify rest of headers.
+		# Renaming first column header 'New Column'
+		ref_table.columns = ['New Column', 'Date', 'Attr']
+
 		out = render(in_table, params)
 		self.assertTrue(out.equals(ref_table))
 
