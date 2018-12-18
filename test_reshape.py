@@ -5,127 +5,126 @@ from reshape import render
 
 
 class TestReshape(unittest.TestCase):
-    def setUp(self):
-        # this data is designed to sorted in the way that our wide to long
-        # operation would sort
-
-        self.long1data = {
-            'date': ['2000-01-03', '2000-01-03', '2000-01-03', '2000-01-04',
-                     '2000-01-04', '2000-01-04', '2000-01-05', '2000-01-05',
-                     '2000-01-05', '2000-01-06', '2000-01-06', '2000-01-06'],
-            'variable': ['George', 'Lisa', 'Michael', 'George', 'Lisa',
-                         'Michael', 'George', 'Lisa', 'Michael', 'George',
-                         'Lisa', 'Michael'],
-            'value': [200, 500, 450, 180.5, 450, 448, 177, 420, 447, 150, 300,
-                      344.6],
-        }
-        self.long1 = pd.DataFrame(self.long1data)
-
-        self.wide1 = self.long1.set_index(['date', 'variable']).unstack()
-        cols = [col[-1] for col in self.wide1.columns.values]
-        self.wide1.columns = cols  # get rid of multi-index hierarchy
-        # turn index cols into regular cols
-        self.wide1.reset_index(inplace=True)
-
-        # Tables with more than one id column
-        idcol = pd.Series(['a', 'b', 'c', 'd'])
-        idcol.name = 'idcol'
-        self.wide2 = pd.concat([idcol, self.wide1], axis=1)
-
-        self.long2 = pd.melt(self.wide2, id_vars=['idcol', 'date'])
-        self.long2.sort_values(['idcol', 'date'], inplace=True)
-        # renumber after sort, don't add extra index col
-        self.long2.reset_index(drop=True, inplace=True)
-
-        # Testing second key
-        self.long3data = self.long1data.copy()
-        self.long3data['category'] = ['A'] * 4 + ['B'] * 4 + ['C'] * 4
-        self.long3 = pd.DataFrame(
-            self.long3data,
-            columns=['date', 'category', 'variable', 'value']
-        )
-        # Result when two keys are supplied
-        self.wide3 = self.long3 \
-            .set_index(['date', 'category', 'variable']) \
-            .unstack()
-        self.wide3.columns = [col[-1] for col in self.wide3.columns.values]
-        self.wide3.reset_index(inplace=True)
-
-        # Result when one key is supplied
-        self.wide3single = self.long3.set_index(['date', 'variable']).unstack()
-        self.wide3single.columns = [
-            col[-1] for col in self.wide3single.columns.values
-        ]
-        self.wide3single.reset_index(inplace=True)
-
     def test_defaults(self):
         params = {'direction': 0, 'colnames': '', 'varcol': ''}
-        out = render(self.wide1, params)
+        out = render(pd.DataFrame({'A': [1, 2]}), params)
         # should NOP when first applied
-        assert_frame_equal(out, self.wide1)
+        assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
 
     def test_wide_to_long(self):
-        params = {'direction': 0, 'colnames': 'date', 'varcol': ''}
-        out = render(self.wide1, params)
-        assert_frame_equal(out, self.long1)
+        in_table = pd.DataFrame({
+            'x': [1, 2, 3],
+            'A': ['a', 'b', 'c'],
+            'B': ['d', 'e', 'f'],
+        })
+        params = {'direction': 0, 'colnames': 'x', 'varcol': ''}
+        out = render(in_table, params)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'variable': list('ABABAB'),
+            'value': list('adbecf'),
+        }))
 
     def test_wide_to_long_mulicolumn(self):
-        # two ID columns
-        params = {'direction': 0, 'colnames': 'idcol,date', 'varcol': ''}
-        out = render(self.wide2, params)
-        assert_frame_equal(out, self.long2)
+        """Wide-to-long, with two ID columns."""
+        in_table = pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'y': [4, 5, 4, 5, 4, 5],
+            'A': list('abcdef'),
+            'B': list('ghijkl'),
+        })
+        params = {'direction': 0, 'colnames': 'x,y', 'varcol': ''}
+        out = render(in_table, params)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
+            'y': [4, 4, 5, 5, 4, 4, 5, 5, 4, 4, 5, 5],
+            'variable': list('ABABABABABAB'),
+            'value': list('agbhcidjekfl'),
+        }))
 
     def test_long_to_wide(self):
-        params = {'direction': 1, 'colnames': 'date', 'varcol': 'variable'}
-        out = render(self.long1, params)
-        assert_frame_equal(out, self.wide1)
+        in_table = pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'variable': list('ABABAB'),
+            'value': list('adbecf'),
+        })
+        params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
+        out = render(in_table, params)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': [1, 2, 3],
+            'A': ['a', 'b', 'c'],
+            'B': ['d', 'e', 'f'],
+        }))
 
     def test_long_to_wide_missing_varcol(self):
         params = {'direction': 1, 'colnames': 'date', 'varcol': ''}
-        out = render(self.long1, params)
+        out = render(pd.DataFrame({'A': [1, 2]}), params)
         # nop if no column selected
-        assert_frame_equal(out, self.long1)
-
-    def test_long_to_wide_no_checkbox_no_second_key(self):
-        # If checkbox value not provided, behave like single key
-        params = {
-            'direction': 1,
-            'colnames': 'date',
-            'varcol': 'variable'
-        }
-        out = render(self.long3, params)
-        assert_frame_equal(out, self.wide3single)
+        assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
 
     def test_long_to_wide_checkbox_but_no_second_key(self):
-        # If checkbox value is provided but no second key column is
-        # specified, behave like single key
+        """has_second_key does nothing if no second column is chosen."""
+        in_table = pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'variable': list('ABABAB'),
+            'value': list('adbecf'),
+        })
         params = {
             'direction': 1,
-            'colnames': 'date',
+            'colnames': 'x',
             'has_second_key': True,
             'varcol': 'variable'
         }
-        out = render(self.long3, params)
-        assert_frame_equal(out, self.wide3single)
+        out = render(in_table, params)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': [1, 2, 3],
+            'A': ['a', 'b', 'c'],
+            'B': ['d', 'e', 'f'],
+        }))
 
     def test_long_to_wide_two_keys(self):
-        # Test two keys
+        """Long-to-wide with second_key: identical to two colnames."""
+        in_table = pd.DataFrame({
+            'x': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
+            'y': [4, 4, 5, 5, 4, 4, 5, 5, 4, 4, 5, 5],
+            'variable': list('ABABABABABAB'),
+            'value': list('abcdefghijkl'),
+        })
         params = {
             'direction': 1,
-            'colnames': 'date',
+            'colnames': 'x',
             'has_second_key': True,
-            'second_key': 'category',
+            'second_key': 'y',
             'varcol': 'variable'
         }
-        out = render(self.long3, params)
-        assert_frame_equal(out, self.wide3)
+        out = render(in_table, params)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'y': [4, 5, 4, 5, 4, 5],
+            'A': list('acegik'),
+            'B': list('bdfhjl'),
+        }))
 
-    def test_long_to_wide_mulicolumn(self):
-        # two ID columns
-        params = {'direction': 1, 'colnames': 'idcol,date',
-                  'varcol': 'variable'}
-        out = render(self.long2, params)
-        assert_frame_equal(out, self.wide2)
+    def test_long_to_wide_multicolumn(self):
+        """Long-to-wide with two ID columns."""
+        in_table = pd.DataFrame({
+            'x': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
+            'y': [4, 4, 5, 5, 4, 4, 5, 5, 4, 4, 5, 5],
+            'variable': list('ABABABABABAB'),
+            'value': list('abcdefghijkl'),
+        })
+        params = {
+            'direction': 1,
+            'colnames': 'x,y',
+            'varcol': 'variable'
+        }
+        out = render(in_table, params)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'y': [4, 5, 4, 5, 4, 5],
+            'A': list('acegik'),
+            'B': list('bdfhjl'),
+        }))
 
     def test_transpose(self):
         # Input simulates a table with misplaced headers
