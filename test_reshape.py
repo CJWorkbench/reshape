@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from reshape import render
@@ -128,32 +129,25 @@ class TestReshape(unittest.TestCase):
 
     def test_transpose(self):
         # Input simulates a table with misplaced headers
-        in_table_data = {
+        in_table = pd.DataFrame({
             'Name': ['Date', 'Attr'],
-            'Dolores': ['2018-04-22', 10],
+            'Dolores': ['2018-04-22', '10'],
             'Robert': ['2016-10-02', None],
-            'Teddy': ['2018-04-22', 8]
-        }
-        ref_table_data = {
-            'Name': ['Dolores', 'Robert', 'Teddy'],
-            'Date': ['2018-04-22', '2016-10-02', '2018-04-22'],
-            'Attr': [10, None, 8]
-        }
-        # Cast as category
-        in_table = pd.DataFrame(
-            in_table_data,
-            columns=['Name', 'Dolores', 'Robert', 'Teddy']
-        ).astype('category')
-        ref_table = pd.DataFrame(ref_table_data,
-                                 columns=['Name', 'Date', 'Attr'])
+            'Teddy': ['2018-04-22', '8']
+        }).astype('category')  # cast as Category -- extra-tricky!
+
         params = {'direction': 2}
+        out = render(in_table, params)
 
         # Keeping the old header for the first column can be confusing.
         # First column header doesnt usually classify rest of headers.
         # Renaming first column header 'New Column'
-        ref_table.columns = ['New Column', 'Date', 'Attr']
+        ref_table = pd.DataFrame({
+            'New Column': ['Dolores', 'Robert', 'Teddy'],
+            'Date': ['2018-04-22', '2016-10-02', '2018-04-22'],
+            'Attr': ['10', None, '8']
+        })
 
-        out = render(in_table, params)
         assert_frame_equal(out, ref_table)
 
 
