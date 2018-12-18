@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 
@@ -34,9 +35,14 @@ def render(table, params):
             if second_key in table.columns:
                 keys.append(second_key)
 
-        table = table.set_index(keys + [varcol]).unstack()
+        table.set_index(keys + [varcol], inplace=True, drop=True)
+
+        if np.any(table.index.duplicated()):
+            return 'Cannot reshape: some variables are repeated'
+
+        table = table.unstack()
         table.columns = [col[-1] for col in table.columns.values]
-        table = table.reset_index()
+        table.reset_index(inplace=True)
 
     elif dir == 'transpose':
         # We assume that the first column is going to be the new header row

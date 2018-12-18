@@ -127,6 +127,16 @@ class TestReshape(unittest.TestCase):
             'B': list('bdfhjl'),
         }))
 
+    def test_long_to_wide_duplicate_key(self):
+        in_table = pd.DataFrame({
+            'x': [1, 1],
+            'variable': ['A', 'A'],
+            'value': ['x', 'y'],
+        })
+        params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
+        out = render(in_table, params)
+        self.assertEqual(out, 'Cannot reshape: some variables are repeated')
+
     def test_transpose(self):
         # Input simulates a table with misplaced headers
         in_table = pd.DataFrame({
