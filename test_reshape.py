@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from reshape import render
@@ -136,6 +135,18 @@ class TestReshape(unittest.TestCase):
         params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
         out = render(in_table, params)
         self.assertEqual(out, 'Cannot reshape: some variables are repeated')
+
+    def test_long_to_wide_varcol_in_key(self):
+        in_table = pd.DataFrame({
+            'x': ['1', '2'],
+            'variable': ['A', 'B'],
+            'value': ['a', 'b'],
+        })
+        params = {'direction': 1, 'colnames': 'x', 'varcol': 'x'}
+        out = render(in_table, params)
+        self.assertEqual(out, (
+            'Cannot reshape: column and row variables must be different'
+        ))
 
     def test_transpose(self):
         # Input simulates a table with misplaced headers

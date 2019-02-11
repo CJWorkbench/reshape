@@ -35,6 +35,9 @@ def render(table, params):
             if second_key in table.columns:
                 keys.append(second_key)
 
+        if varcol in keys:
+            return 'Cannot reshape: column and row variables must be different'
+
         table.set_index(keys + [varcol], inplace=True, drop=True)
 
         if np.any(table.index.duplicated()):
