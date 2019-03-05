@@ -23,7 +23,7 @@
       "type": "column",
       "visible_if": {
         "id_name": "direction",
-        "value": "Transpose",
+        "value": ["transpose"],
         "invert": true
       }
     },
@@ -42,7 +42,7 @@
       "type": "checkbox",
       "visible_if": {
           "id_name": "direction",
-          "value": "Long to wide"
+          "value": ["longtowide"]
       }
     },
     {
@@ -51,7 +51,7 @@
       "type": "column",
       "visible_if": {
         "id_name": "direction",
-        "value": "Long to wide"
+        "value": ["longtowide"]
       }
     }
   ]
