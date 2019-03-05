@@ -1,12 +1,12 @@
 import unittest
 import pandas as pd
 from pandas.testing import assert_frame_equal
-from reshape import render
+from reshape import render, migrate_params
 
 
 class TestReshape(unittest.TestCase):
     def test_defaults(self):
-        params = {'direction': 0, 'colnames': '', 'varcol': ''}
+        params = {'direction': 'widetolong', 'colnames': '', 'varcol': ''}
         out = render(pd.DataFrame({'A': [1, 2]}), params)
         # should NOP when first applied
         assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
@@ -17,7 +17,7 @@ class TestReshape(unittest.TestCase):
             'A': ['a', 'b', 'c'],
             'B': ['d', 'e', 'f'],
         })
-        params = {'direction': 0, 'colnames': 'x', 'varcol': ''}
+        params = {'direction': 'widetolong', 'colnames': 'x', 'varcol': ''}
         out = render(in_table, params)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 1, 2, 2, 3, 3],
@@ -33,7 +33,7 @@ class TestReshape(unittest.TestCase):
             'A': list('abcdef'),
             'B': list('ghijkl'),
         })
-        params = {'direction': 0, 'colnames': 'x,y', 'varcol': ''}
+        params = {'direction': 'widetolong', 'colnames': 'x,y', 'varcol': ''}
         out = render(in_table, params)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
@@ -48,7 +48,7 @@ class TestReshape(unittest.TestCase):
             'variable': list('ABABAB'),
             'value': list('adbecf'),
         })
-        params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
+        params = {'direction': 'longtowide', 'colnames': 'x', 'varcol': 'variable'}
         out = render(in_table, params)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 2, 3],
@@ -57,7 +57,7 @@ class TestReshape(unittest.TestCase):
         }))
 
     def test_long_to_wide_missing_varcol(self):
-        params = {'direction': 1, 'colnames': 'date', 'varcol': ''}
+        params = {'direction': 'longtowide', 'colnames': 'date', 'varcol': ''}
         out = render(pd.DataFrame({'A': [1, 2]}), params)
         # nop if no column selected
         assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
@@ -70,7 +70,7 @@ class TestReshape(unittest.TestCase):
             'value': list('adbecf'),
         })
         params = {
-            'direction': 1,
+            'direction': 'longtowide',
             'colnames': 'x',
             'has_second_key': True,
             'varcol': 'variable'
@@ -91,7 +91,7 @@ class TestReshape(unittest.TestCase):
             'value': list('abcdefghijkl'),
         })
         params = {
-            'direction': 1,
+            'direction': 'longtowide',
             'colnames': 'x',
             'has_second_key': True,
             'second_key': 'y',
@@ -114,7 +114,7 @@ class TestReshape(unittest.TestCase):
             'value': list('abcdefghijkl'),
         })
         params = {
-            'direction': 1,
+            'direction': 'longtowide',
             'colnames': 'x,y',
             'varcol': 'variable'
         }
@@ -132,7 +132,7 @@ class TestReshape(unittest.TestCase):
             'variable': ['A', 'A'],
             'value': ['x', 'y'],
         })
-        params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
+        params = {'direction': 'longtowide', 'colnames': 'x', 'varcol': 'variable'}
         out = render(in_table, params)
         self.assertEqual(out, 'Cannot reshape: some variables are repeated')
 
@@ -142,7 +142,7 @@ class TestReshape(unittest.TestCase):
             'variable': ['A', 'B'],
             'value': ['a', 'b'],
         })
-        params = {'direction': 1, 'colnames': 'x', 'varcol': 'x'}
+        params = {'direction': 'longtowide', 'colnames': 'x', 'varcol': 'x'}
         out = render(in_table, params)
         self.assertEqual(out, (
             'Cannot reshape: column and row variables must be different'
@@ -157,7 +157,7 @@ class TestReshape(unittest.TestCase):
             'Teddy': ['2018-04-22', '8']
         }).astype('category')  # cast as Category -- extra-tricky!
 
-        params = {'direction': 2}
+        params = {'direction': 'transpose'}
         out = render(in_table, params)
 
         # Keeping the old header for the first column can be confusing.
@@ -171,6 +171,12 @@ class TestReshape(unittest.TestCase):
 
         assert_frame_equal(out, ref_table)
 
+    def test_migrate_v0_to_v1(self):
+        v0_params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
+        v1_params = {'direction': 'longtowide', 'colnames': 'x', 'varcol': 'variable'}
+
+        new_params = migrate_params(v0_params)
+        self.assertEqual(new_params, v1_params)
 
 if __name__ == '__main__':
     unittest.main()
