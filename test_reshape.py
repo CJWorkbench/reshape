@@ -25,14 +25,14 @@ class TestReshape(unittest.TestCase):
     def test_wide_to_long(self):
         in_table = pd.DataFrame({
             'x': [1, 2, 3],
-            'A': ['a', 'b', 'c'],
-            'B': ['d', 'e', 'f'],
+            'A': [4, 5, 6],
+            'B': [7, 8, 9],
         })
         out = render(in_table, P('widetolong', 'x'))
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 1, 2, 2, 3, 3],
             'variable': list('ABABAB'),
-            'value': list('adbecf'),
+            'value': [4, 7, 5, 8, 6, 9],
         }))
 
     def test_wide_to_long_mixed_value_types(self):
