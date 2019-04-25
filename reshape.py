@@ -1,33 +1,78 @@
+from typing import List
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype, is_datetime64_dtype
+
+
+def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
+    # Check all values are the same type
+    value_table = table[set(table.columns).difference([colname])]
+    value_dtypes = value_table.dtypes
+    are_numeric = value_dtypes.map(is_numeric_dtype)
+    are_datetime = value_dtypes.map(is_datetime64_dtype)
+    are_text = ~are_numeric & ~are_datetime
+    if not are_numeric.all() and not are_datetime.all() and not are_text.all():
+        # Convert mixed values so they're all text. Values must all be the same
+        # type.
+        to_convert = value_table.columns[~are_text]
+        na = table[to_convert].isna()
+        table.loc[:,to_convert] = table[to_convert].astype(str)
+        table.loc[:,to_convert][na] = np.nan
+
+        cols_str = ', '.join(f'"{c}"' for c in to_convert)
+        error = (
+            f'Columns {cols_str} were auto-converted to Text because the '
+            'value column cannot have multiple types.'
+        )
+        quick_fixes = [{
+            'text': f'Convert {cols_str} to text',
+            'action': 'prependModule',
+            'args': [
+                'converttotext',
+                {'colnames': ','.join(to_convert)}
+            ],
+        }]
+    else:
+        error = ''
+        quick_fixes = []
+
+    table = pd.melt(table, id_vars=[colname])
+    table.sort_values(colname, inplace=True)
+    table.reset_index(drop=True, inplace=True)
+
+    if error:
+        return {
+            'dataframe': table,
+            'error': error,
+            'quick_fixes': quick_fixes,
+        }
+    else:
+        return table
 
 
 def render(table, params):
     dir = params['direction']
-    cols = params.get('colnames', '')
-    varcol = params.get('varcol', '')
+    colname = params['colnames']  # bad param name! It's single-column
+    varcol = params['varcol']
 
     # no columns selected and not transpose, NOP
-    if not cols and dir != 'transpose':
+    if not colname and dir != 'transpose':
         return table
-    cols = cols.split(',')
 
     if dir == 'widetolong':
-        table = pd.melt(table, id_vars=cols)
-        table.sort_values(cols, inplace=True)
-        table.reset_index(drop=True, inplace=True)
+        return wide_to_long(table, colname)
 
     elif dir == 'longtowide':
         if not varcol:
             # gotta have this parameter
             return table
 
-        keys = cols
+        keys = [colname]
 
-        has_second_key = params.get('has_second_key', False)
+        has_second_key = params['has_second_key']
         # If second key is used and present, append it to the list of columns
         if has_second_key:
-            second_key = params.get('second_key', '')
+            second_key = params['second_key']
             if second_key in table.columns:
                 keys.append(second_key)
 
