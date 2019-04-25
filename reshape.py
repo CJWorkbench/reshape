@@ -7,6 +7,16 @@ from pandas.api.types import is_numeric_dtype, is_datetime64_dtype
 def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
     # Check all values are the same type
     value_table = table[set(table.columns).difference([colname])]
+
+    if value_table.empty:
+        # Avoids 'No objects to concatenate' when colname is categorical and
+        # there are no values or other columns
+        return pd.DataFrame({
+            colname: [],
+            'variable': [],
+            'value': [],
+        }, dtype=str)
+
     value_dtypes = value_table.dtypes
     are_numeric = value_dtypes.map(is_numeric_dtype)
     are_datetime = value_dtypes.map(is_datetime64_dtype)

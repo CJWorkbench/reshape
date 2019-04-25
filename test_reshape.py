@@ -73,6 +73,15 @@ class TestReshape(unittest.TestCase):
             'B': ['d', 'e', 'f'],
         }))
 
+    def test_wide_to_long_no_values_or_variables_categorical_id_var(self):
+        result = render(pd.DataFrame({'A': []}, dtype='category'),
+                        P('widetolong', 'A'))
+        assert_frame_equal(result, pd.DataFrame({
+            'A': [],
+            'variable': [],
+            'value': [],
+        }, dtype=str))
+
     def test_long_to_wide_missing_varcol(self):
         out = render(pd.DataFrame({'A': [1, 2]}), P('longtowide', 'date', ''))
         # nop if no column selected
