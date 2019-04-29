@@ -60,6 +60,46 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
         return table
 
 
+def long_to_wide(table: pd.DataFrame, keycolnames: List[str],
+                 varcolname: str) -> pd.DataFrame:
+    varcol = table[varcolname]
+    if varcol.dtype != object and not hasattr(varcol, 'cat'):
+        error = (
+            'Column "%s" was auto-converted to Text because column names must '
+            'be text.'
+            % varcolname
+        )
+        quick_fixes = [{
+            'text': 'Convert "%s" to text' % varcolname,
+            'action': 'prependModule',
+            'args': ['converttotext', {'colnames': varcolname}],
+        }]
+        na = varcol.isnull()
+        varcol = varcol.astype(str)
+        varcol[na] = np.nan
+        table[varcolname] = varcol
+    else:
+        error = None
+        quick_fixes = None
+
+    table.set_index(keycolnames + [varcolname], inplace=True, drop=True)
+    if np.any(table.index.duplicated()):
+        return 'Cannot reshape: some variables are repeated'
+
+    table = table.unstack()
+    table.columns = [col[-1] for col in table.columns.values]
+    table.reset_index(inplace=True)
+
+    if error is not None:
+        return {
+            'dataframe': table,
+            'error': error,
+            'quick_fixes': quick_fixes,
+        }
+    else:
+        return table
+
+
 def render(table, params):
     dir = params['direction']
     colname = params['colnames']  # bad param name! It's single-column
@@ -89,14 +129,7 @@ def render(table, params):
         if varcol in keys:
             return 'Cannot reshape: column and row variables must be different'
 
-        table.set_index(keys + [varcol], inplace=True, drop=True)
-
-        if np.any(table.index.duplicated()):
-            return 'Cannot reshape: some variables are repeated'
-
-        table = table.unstack()
-        table.columns = [col[-1] for col in table.columns.values]
-        table.reset_index(inplace=True)
+        return long_to_wide(table, keys, varcol)
 
     elif dir == 'transpose':
         # We assume that the first column is going to be the new header row

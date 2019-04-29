@@ -60,6 +60,15 @@ class TestReshape(unittest.TestCase):
             ],
         }])
 
+    def test_wide_to_long_no_values_or_variables_categorical_id_var(self):
+        result = render(pd.DataFrame({'A': []}, dtype='category'),
+                        P('widetolong', 'A'))
+        assert_frame_equal(result, pd.DataFrame({
+            'A': [],
+            'variable': [],
+            'value': [],
+        }, dtype=str))
+
     def test_long_to_wide(self):
         in_table = pd.DataFrame({
             'x': [1, 1, 2, 2, 3, 3],
@@ -73,19 +82,35 @@ class TestReshape(unittest.TestCase):
             'B': ['d', 'e', 'f'],
         }))
 
-    def test_wide_to_long_no_values_or_variables_categorical_id_var(self):
-        result = render(pd.DataFrame({'A': []}, dtype='category'),
-                        P('widetolong', 'A'))
-        assert_frame_equal(result, pd.DataFrame({
-            'A': [],
-            'variable': [],
-            'value': [],
-        }, dtype=str))
-
     def test_long_to_wide_missing_varcol(self):
         out = render(pd.DataFrame({'A': [1, 2]}), P('longtowide', 'date', ''))
         # nop if no column selected
         assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
+
+    def test_long_to_wide_convert_to_str(self):
+        in_table = pd.DataFrame({
+            'x': [1, 1, 2, 2, 3, 3],
+            'variable': [4, 5, 4, 5, 4, 5],
+            'value': list('adbecf'),
+        })
+        result = render(in_table, P('longtowide', 'x', 'variable'))
+        assert_frame_equal(result['dataframe'], pd.DataFrame({
+            'x': [1, 2, 3],
+            '4': ['a', 'b', 'c'],
+            '5': ['d', 'e', 'f'],
+        }))
+        self.assertEqual(result['error'], (
+            'Column "variable" was auto-converted to Text because column '
+            'names must be text.'
+        ))
+        self.assertEqual(result['quick_fixes'], [{
+            'text': 'Convert "variable" to text',
+            'action': 'prependModule',
+            'args': [
+                'converttotext',
+                {'colnames': 'variable'},
+            ],
+        }])
 
     def test_long_to_wide_checkbox_but_no_second_key(self):
         """has_second_key does nothing if no second column is chosen."""
