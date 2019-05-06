@@ -1,8 +1,17 @@
+from collections import namedtuple
 import unittest
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from reshape import render, migrate_params
+
+
+Column = namedtuple('Column', ('name', 'type',))
+
+
+DefaultKwargs = {
+    'input_columns': 'most code does not look at this',
+}
 
 
 def P(direction='widetolong', colnames='', varcol='', has_second_key=False,
@@ -19,7 +28,7 @@ def P(direction='widetolong', colnames='', varcol='', has_second_key=False,
 class TestReshape(unittest.TestCase):
     def test_defaults(self):
         # should NOP when first applied
-        out = render(pd.DataFrame({'A': [1, 2]}), P())
+        out = render(pd.DataFrame({'A': [1, 2]}), P(), **DefaultKwargs)
         assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
 
     def test_wide_to_long(self):
@@ -28,7 +37,7 @@ class TestReshape(unittest.TestCase):
             'A': [4, 5, 6],
             'B': [7, 8, 9],
         })
-        out = render(in_table, P('widetolong', 'x'))
+        out = render(in_table, P('widetolong', 'x'), **DefaultKwargs)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 1, 2, 2, 3, 3],
             'variable': list('ABABAB'),
@@ -41,7 +50,7 @@ class TestReshape(unittest.TestCase):
             'A': [1, 2],
             'B': ['y', np.nan]
         })
-        result = render(in_table, P('widetolong', 'X'))
+        result = render(in_table, P('widetolong', 'X'), **DefaultKwargs)
         assert_frame_equal(result['dataframe'], pd.DataFrame({
             'X': ['x', 'x', 'y', 'y'],
             'variable': ['A', 'B', 'A', 'B'],
@@ -62,7 +71,7 @@ class TestReshape(unittest.TestCase):
 
     def test_wide_to_long_no_values_or_variables_categorical_id_var(self):
         result = render(pd.DataFrame({'A': []}, dtype='category'),
-                        P('widetolong', 'A'))
+                        P('widetolong', 'A'), **DefaultKwargs)
         assert_frame_equal(result, pd.DataFrame({
             'A': [],
             'variable': [],
@@ -75,7 +84,8 @@ class TestReshape(unittest.TestCase):
             'variable': list('ABABAB'),
             'value': list('adbecf'),
         })
-        out = render(in_table, P('longtowide', 'x', 'variable'))
+        out = render(in_table, P('longtowide', 'x', 'variable'),
+                     **DefaultKwargs)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 2, 3],
             'A': ['a', 'b', 'c'],
@@ -83,7 +93,8 @@ class TestReshape(unittest.TestCase):
         }))
 
     def test_long_to_wide_missing_varcol(self):
-        out = render(pd.DataFrame({'A': [1, 2]}), P('longtowide', 'date', ''))
+        out = render(pd.DataFrame({'A': [1, 2]}), P('longtowide', 'date', ''),
+                     **DefaultKwargs)
         # nop if no column selected
         assert_frame_equal(out, pd.DataFrame({'A': [1, 2]}))
 
@@ -93,7 +104,8 @@ class TestReshape(unittest.TestCase):
             'variable': [4, 5, 4, 5, 4, 5],
             'value': list('adbecf'),
         })
-        result = render(in_table, P('longtowide', 'x', 'variable'))
+        result = render(in_table, P('longtowide', 'x', 'variable'),
+                        **DefaultKwargs)
         assert_frame_equal(result['dataframe'], pd.DataFrame({
             'x': [1, 2, 3],
             '4': ['a', 'b', 'c'],
@@ -120,7 +132,8 @@ class TestReshape(unittest.TestCase):
             'value': list('adbecf'),
         })
         out = render(in_table,
-                     P('longtowide', 'x', 'variable', has_second_key=True))
+                     P('longtowide', 'x', 'variable', has_second_key=True),
+                     **DefaultKwargs)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 2, 3],
             'A': ['a', 'b', 'c'],
@@ -135,7 +148,8 @@ class TestReshape(unittest.TestCase):
             'variable': list('ABABABABABAB'),
             'value': list('abcdefghijkl'),
         })
-        out = render(in_table, P('longtowide', 'x', 'variable', True, 'y'))
+        out = render(in_table, P('longtowide', 'x', 'variable', True, 'y'),
+                     **DefaultKwargs)
         assert_frame_equal(out, pd.DataFrame({
             'x': [1, 1, 2, 2, 3, 3],
             'y': [4, 5, 4, 5, 4, 5],
@@ -149,7 +163,8 @@ class TestReshape(unittest.TestCase):
             'variable': ['A', 'A'],
             'value': ['x', 'y'],
         })
-        out = render(in_table, P('longtowide', 'x', 'variable'))
+        out = render(in_table, P('longtowide', 'x', 'variable'),
+                     **DefaultKwargs)
         self.assertEqual(out, 'Cannot reshape: some variables are repeated')
 
     def test_long_to_wide_varcol_in_key(self):
@@ -158,32 +173,36 @@ class TestReshape(unittest.TestCase):
             'variable': ['A', 'B'],
             'value': ['a', 'b'],
         })
-        out = render(in_table, P('longtowide', 'x', 'x'))
+        out = render(in_table, P('longtowide', 'x', 'x'), **DefaultKwargs)
         self.assertEqual(out, (
             'Cannot reshape: column and row variables must be different'
         ))
 
     def test_transpose(self):
-        # Input simulates a table with misplaced headers
+        # (Most tests are in the `transpose` module....)
         in_table = pd.DataFrame({
             'Name': ['Date', 'Attr'],
             'Dolores': ['2018-04-22', '10'],
             'Robert': ['2016-10-02', None],
             'Teddy': ['2018-04-22', '8']
-        }).astype('category')  # cast as Category -- extra-tricky!
+        })
 
-        out = render(in_table, P('transpose'))
-
+        result = render(in_table, P('transpose'),
+                        input_columns={
+                            'Name': Column('Name', 'text'),
+                            'Dolores': Column('Dolores', 'text'),
+                            'Robert': Column('Robert', 'text'),
+                            'Teddy': Column('Teddy', 'text'),
+                        })
         # Keeping the old header for the first column can be confusing.
         # First column header doesnt usually classify rest of headers.
         # Renaming first column header 'New Column'
-        ref_table = pd.DataFrame({
+        expected = pd.DataFrame({
             'New Column': ['Dolores', 'Robert', 'Teddy'],
             'Date': ['2018-04-22', '2016-10-02', '2018-04-22'],
             'Attr': ['10', None, '8']
         })
-
-        assert_frame_equal(out, ref_table)
+        assert_frame_equal(result, expected)
 
     def test_migrate_v0_to_v1(self):
         v0_params = {'direction': 1, 'colnames': 'x', 'varcol': 'variable'}
