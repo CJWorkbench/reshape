@@ -92,6 +92,20 @@ class TestReshape(unittest.TestCase):
             'B': ['d', 'e', 'f'],
         }))
 
+    def test_long_to_wide_categoricals(self):
+        in_table = pd.DataFrame({
+            'x': list('112233'),
+            'variable': list('ABABAB'),
+            'value': list('adbecf'),
+        }, dtype='category')
+        out = render(in_table, P('longtowide', 'x', 'variable'),
+                     **DefaultKwargs)
+        assert_frame_equal(out, pd.DataFrame({
+            'x': pd.Series(['1', '2', '3'], dtype='category'),
+            'A': ['a', 'b', 'c'],
+            'B': ['d', 'e', 'f'],
+        }))
+
     def test_long_to_wide_missing_varcol(self):
         out = render(pd.DataFrame({'A': [1, 2]}), P('longtowide', 'date', ''),
                      **DefaultKwargs)
@@ -177,6 +191,35 @@ class TestReshape(unittest.TestCase):
         self.assertEqual(out, (
             'Cannot reshape: column and row variables must be different'
         ))
+
+    def test_long_to_wide_nix_empty(self):
+        in_table = pd.DataFrame({
+            'x': [1, 2, 3],
+            'variable': ['', np.nan, 'foo'],
+            'value': ['a', 'b', 'c']
+        })
+        result = render(in_table, P('longtowide', 'x', 'variable'),
+                        **DefaultKwargs)
+        assert_frame_equal(result['dataframe'], pd.DataFrame({
+            'x': [3],
+            'foo': ['c'],
+        }))
+        self.assertEqual(result['error'],
+                         '2 input rows with empty "variable" were removed.')
+
+    def test_long_to_wide_nix_empty_leaving_empty_table(self):
+        in_table = pd.DataFrame({
+            'x': [1, 2],
+            'variable': ['', np.nan],
+            'value': ['a', 'b']
+        })
+        result = render(in_table, P('longtowide', 'x', 'variable'),
+                        **DefaultKwargs)
+        assert_frame_equal(result['dataframe'], pd.DataFrame({
+            'x': pd.Series([], dtype=int),
+        }))
+        self.assertEqual(result['error'],
+                         '2 input rows with empty "variable" were removed.')
 
     def test_transpose(self):
         # (Most tests are in the `transpose` module....)

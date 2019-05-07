@@ -65,25 +65,41 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
 
 def long_to_wide(table: pd.DataFrame, keycolnames: List[str],
                  varcolname: str) -> pd.DataFrame:
+    warnings = []
+    quick_fixes = []
+
     varcol = table[varcolname]
     if varcol.dtype != object and not hasattr(varcol, 'cat'):
-        error = (
-            'Column "%s" was auto-converted to Text because column names must '
-            'be text.'
-            % varcolname
+        # Convert to str, in-place
+        warnings.append(
+            (
+                'Column "%s" was auto-converted to Text because column names '
+                'must be text.'
+            ) % varcolname
         )
-        quick_fixes = [{
+        quick_fixes.append({
             'text': 'Convert "%s" to text' % varcolname,
             'action': 'prependModule',
             'args': ['converttotext', {'colnames': varcolname}],
-        }]
+        })
         na = varcol.isnull()
         varcol = varcol.astype(str)
         varcol[na] = np.nan
         table[varcolname] = varcol
-    else:
-        error = None
-        quick_fixes = None
+
+    # Remove empty values, in-place. Empty column headers aren't allowed.
+    # https://www.pivotaltracker.com/story/show/162648330
+    empty = varcol.isin([np.nan, pd.NaT, None, ''])
+    n_empty = np.count_nonzero(empty)
+    if n_empty:
+        if n_empty == 1:
+            text_empty = '1 input row'
+        else:
+            text_empty = '{:,d} input rows'.format(n_empty)
+        warnings.append('%s with empty "%s" were removed.'
+                        % (text_empty, varcolname))
+        table = table[~empty]
+        table.reset_index(drop=True, inplace=True)
 
     table.set_index(keycolnames + [varcolname], inplace=True, drop=True)
     if np.any(table.index.duplicated()):
@@ -93,10 +109,10 @@ def long_to_wide(table: pd.DataFrame, keycolnames: List[str],
     table.columns = [col[-1] for col in table.columns.values]
     table.reset_index(inplace=True)
 
-    if error is not None:
+    if warnings:
         return {
             'dataframe': table,
-            'error': error,
+            'error': '\n'.join(warnings),
             'quick_fixes': quick_fixes,
         }
     else:
