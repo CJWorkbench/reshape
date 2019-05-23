@@ -65,7 +65,7 @@ class TestReshape(unittest.TestCase):
             'action': 'prependModule',
             'args': [
                 'converttotext',
-                {'colnames': 'A'},
+                {'colnames': ['A']},
             ],
         }])
 
@@ -134,7 +134,7 @@ class TestReshape(unittest.TestCase):
             'action': 'prependModule',
             'args': [
                 'converttotext',
-                {'colnames': 'variable'},
+                {'colnames': ['variable']},
             ],
         }])
 

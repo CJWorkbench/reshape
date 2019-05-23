@@ -42,7 +42,7 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
             'action': 'prependModule',
             'args': [
                 'converttotext',
-                {'colnames': ','.join(to_convert)}
+                {'colnames': to_convert}
             ],
         }]
     else:
@@ -80,7 +80,7 @@ def long_to_wide(table: pd.DataFrame, keycolnames: List[str],
         quick_fixes.append({
             'text': 'Convert "%s" to text' % varcolname,
             'action': 'prependModule',
-            'args': ['converttotext', {'colnames': varcolname}],
+            'args': ['converttotext', {'colnames': [varcolname]}],
         })
         na = varcol.isnull()
         varcol = varcol.astype(str)
