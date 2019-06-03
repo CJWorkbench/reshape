@@ -68,6 +68,8 @@ class TestReshape(unittest.TestCase):
                 {'colnames': ['A']},
             ],
         }])
+        self.assertIsInstance(result['quick_fixes'][0]['args'][1]['colnames'],
+                              list)
 
     def test_wide_to_long_no_values_or_variables_categorical_id_var(self):
         result = render(pd.DataFrame({'A': []}, dtype='category'),

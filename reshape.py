@@ -42,7 +42,7 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
             'action': 'prependModule',
             'args': [
                 'converttotext',
-                {'colnames': to_convert}
+                {'colnames': list(to_convert)}
             ],
         }]
     else:
