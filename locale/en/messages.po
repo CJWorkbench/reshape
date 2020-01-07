@@ -1,0 +1,45 @@
+# English translations for PROJECT.
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2020-01-07 06:59+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+msgid "_spec.name"
+msgstr "Reshape"
+
+msgid "_spec.description"
+msgstr "Convert the table between wide and long formats."
+
+msgid "_spec.parameters.direction.options.widetolong.label"
+msgstr "Wide to long"
+
+msgid "_spec.parameters.direction.options.longtowide.label"
+msgstr "Long to wide"
+
+msgid "_spec.parameters.direction.options.transpose.label"
+msgstr "Transpose"
+
+msgid "_spec.parameters.colnames.name"
+msgstr "Row variable"
+
+msgid "_spec.parameters.has_second_key.name"
+msgstr "2nd row variable"
+
+msgid "_spec.parameters.varcol.name"
+msgstr "Column variable"
+
