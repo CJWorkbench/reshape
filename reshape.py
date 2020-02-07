@@ -2,10 +2,8 @@ from typing import Iterator, List, Set
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_datetime64_dtype
-
-
-MAX_N_COLUMNS = 100
-
+from dataclasses import dataclass
+from cjwmodule.util.colnames import gen_unique_clean_colnames
 
 def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
     # Check all values are the same type
@@ -184,14 +182,106 @@ def migrate_params(params):
 # 1. Find the bug in the `transpose` module. Unit-test it; fix; deploy.
 # 2. Copy/paste the `transpose` module's "render()" method here.
 # 3. Rename `render(...)` to `transpose(table, params)`
+# hard-code settings for now. TODO have Workbench pass render(..., settings=...)
+@dataclass
+class Settings:
+    MAX_COLUMNS_PER_TABLE: int
+    MAX_BYTES_PER_COLUMN_NAME: int
+
+
+settings = Settings(99, 120)
+
+
+@dataclass
+class GenColnamesResult:
+    names: List[str]
+    """All column names for the output table (even the first column)."""
+
+    warnings: List[str]
+    """All the things we should tell the user about how we tweaked names."""
+
+
+def _gen_colnames_and_warn(
+    first_colname: str, first_column: pd.Series
+) -> GenColnamesResult:
+    """
+    Generate transposed-table column names.
+
+    If `first_colname` is empty, `column.name` is the first output column. If
+    both are empty, auto-generate the column name (and warn).
+
+    Warn if ASCII-cleaning names, renaming duplicates, truncating names or
+    auto-generating names.
+
+    Assume `first_column` is text without nulls.
+    """
+    n_ascii_cleaned = 0
+    first_ascii_cleaned = None
+    n_default = 0
+    first_default = None
+    n_truncated = 0
+    first_truncated = None
+    n_numbered = 0
+    first_numbered = None
+
+    input_names = [first_colname or first_column.name]
+    input_names.extend(list(first_column.values))
+
+    names = []
+
+    for uccolname in gen_unique_clean_colnames(input_names, settings=settings):
+        name = uccolname.name
+        names.append(name)
+        if uccolname.is_ascii_cleaned:
+            if n_ascii_cleaned == 0:
+                first_ascii_cleaned = name
+            n_ascii_cleaned += 1
+        if uccolname.is_default:
+            if n_default == 0:
+                first_default = name
+            n_default += 1
+        if uccolname.is_truncated:
+            if n_truncated == 0:
+                first_truncated = name
+            n_truncated += 1
+        if uccolname.is_numbered:
+            if n_numbered == 0:
+                first_numbered = name
+            n_numbered += 1
+
+    warnings = []
+    if n_ascii_cleaned > 0:
+        warnings.append(
+            "Removed special characters from %d column names (see “%s”)"
+            % (n_ascii_cleaned, first_ascii_cleaned)
+        )
+    if n_default > 0:
+        warnings.append(
+            "Renamed %d column names (because values were empty; see “%s”)"
+            % (n_default, first_default)
+        )
+    if n_truncated > 0:
+        warnings.append(
+            "Truncated %d column names (to %d bytes each; see “%s”)"
+            % (n_truncated, settings.MAX_BYTES_PER_COLUMN_NAME, first_truncated)
+        )
+    if n_numbered > 0:
+        warnings.append(
+            "Renamed %d duplicate column names (see “%s”)"
+            % (n_numbered, first_numbered)
+        )
+
+    return GenColnamesResult(names, warnings)
+
+
 def transpose(table, params, *, input_columns):
     warnings = []
     colnames_auto_converted_to_text = []
 
-    if len(table) > MAX_N_COLUMNS:
-        table = table.truncate(after=MAX_N_COLUMNS - 1)
+    if len(table) > settings.MAX_COLUMNS_PER_TABLE:
+        table = table.truncate(after=settings.MAX_COLUMNS_PER_TABLE - 1)
         warnings.append(
-            f"We truncated the input to {MAX_N_COLUMNS} rows so the "
+            f"We truncated the input to {settings.MAX_COLUMNS_PER_TABLE} rows so the "
             "transposed table would have a reasonable number of columns."
         )
 
@@ -199,57 +289,24 @@ def transpose(table, params, *, input_columns):
         # happens if we're the first module in the module stack
         return pd.DataFrame()
 
-    # If user does not supply a name (default), use the input table's first
-    # column name as the output table's first column name.
-    first_colname = params["firstcolname"].strip() or table.columns[0]
-
     column = table.columns[0]
-    headers_series = table[column]
+    first_column = table[column]
     table.drop(column, axis=1, inplace=True)
 
-    # Ensure headers are string. (They will become column names.)
     if input_columns[column].type != "text":
         warnings.append(f'Headers in column "A" were auto-converted to text.')
         colnames_auto_converted_to_text.append(column)
 
-    # Regardless of column type, we want to convert to str. This catches lots
-    # of issues:
-    #
-    # * Column names shouldn't be a CategoricalIndex; that would break other
-    #   Pandas functions. See https://github.com/pandas-dev/pandas/issues/19136
-    # * nulls should be converted to '' instead of 'nan'
-    # * Non-str should be converted to str
-    # * `first_colname` will be the first element (so we can enforce its
-    #   uniqueness).
-    #
-    # After this step, `headers` will be a List[str]. "" is okay for now: we'll
-    # catch that later.
-    na = headers_series.isna()
-    headers_series = headers_series.astype(str)
-    headers_series[na] = ""  # Empty values are all equivalent
-    headers_series[headers_series.isna()] = ""
-    headers = headers_series.tolist()
-    headers.insert(0, first_colname)
-    non_empty_headers = [h for h in headers if h]
+    # Ensure headers are string. (They will become column names.)
+    # * categorical => str
+    # * nan => ""
+    # * non-text => str
+    na = first_column.isna()
+    first_column = first_column.astype(str)
+    first_column[na] = ""  # Empty values are all equivalent
 
-    # unique_headers: all the "valuable" header names -- the ones we won't
-    # rename any duplicate/empty headers to.
-    unique_headers = set(headers)
-
-    if "" in unique_headers:
-        warnings.append(
-            f'We renamed some columns because the input column "{column}" had '
-            "empty values."
-        )
-    if len(non_empty_headers) != len(unique_headers - set([""])):
-        warnings.append(
-            f'We renamed some columns because the input column "{column}" had '
-            "duplicate values."
-        )
-
-    headers = list(_uniquize_colnames(headers, unique_headers))
-
-    table.index = headers[1:]
+    gen_headers_result = _gen_colnames_and_warn(params["firstcolname"], first_column)
+    warnings.extend(gen_headers_result.warnings)
 
     input_types = set(c.type for c in input_columns.values() if c.name != column)
     if len(input_types) > 1:
@@ -274,9 +331,10 @@ def transpose(table, params, *, input_columns):
             table[colname][na] = np.nan
 
     # The actual transpose
+    table.index = gen_headers_result.names[1:]
     ret = table.T
     # Set the name of the index: it will become the name of the first column.
-    ret.index.name = first_colname
+    ret.index.name = gen_headers_result.names[0]
     # Make the index (former colnames) a column
     ret.reset_index(inplace=True)
 
@@ -291,7 +349,7 @@ def transpose(table, params, *, input_columns):
                     "action": "prependModule",
                     "args": [
                         "converttotext",
-                        {"colnames": ",".join(colnames_auto_converted_to_text)},
+                        {"colnames": colnames_auto_converted_to_text},
                     ],
                 }
             ],
@@ -300,34 +358,4 @@ def transpose(table, params, *, input_columns):
         return (ret, "\n".join(warnings))
     else:
         return ret
-
-
-def _uniquize_colnames(
-    colnames: Iterator[str], never_rename_to: Set[str]
-) -> Iterator[str]:
-    """
-    Rename columns to prevent duplicates or empty column names.
-
-    The algorithm: iterate over each `colname` and add to an internal "seen".
-    When we encounter a colname we've seen, append " 1", " 2", " 3", etc. to it
-    until we encounter a colname we've never seen that is not in
-    `never_rename_to`.
-    """
-    seen = set()
-    for colname in colnames:
-        force_add_number = False
-        if not colname:
-            colname = "unnamed"
-            force_add_number = "unnamed" in never_rename_to
-        if colname in seen or force_add_number:
-            for i in range(1, 999999):
-                try_colname = f"{colname} {i}"
-                if try_colname not in seen and try_colname not in never_rename_to:
-                    colname = try_colname
-                    break
-
-        seen.add(colname)
-        yield colname
-
-
 # END copy/paste
