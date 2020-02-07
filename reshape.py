@@ -2,6 +2,7 @@ from typing import Iterator, List, Set
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_datetime64_dtype
+from cjwmodule import i18n
 
 
 MAX_N_COLUMNS = 100
@@ -29,27 +30,38 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
         table.loc[:, to_convert][na] = np.nan
 
         cols_str = ", ".join(f'"{c}"' for c in to_convert)
-        error = (
-            f"Columns {cols_str} were auto-converted to Text because the "
-            "value column cannot have multiple types."
-        )
-        quick_fixes = [
-            {
-                "text": f"Convert {cols_str} to text",
-                "action": "prependModule",
-                "args": ["converttotext", {"colnames": list(to_convert)}],
-            }
-        ]
+        error = {
+            "message": i18n.trans(
+                "wide_to_long.badColumns.mixedTypes.error",
+                "{n_columns, plural, other{Columns {column_names} were} one {Column {column_names} was}}"
+                "auto-converted to Text because the "
+                "value column cannot have multiple types.",
+                {
+                    "n_columns": len(to_convert),
+                    "column_names": cols_str
+                }
+            ),
+            "quickFixes": [
+                {
+                    "text": i18n.trans(
+                        "wide_to_long.badColumns.mixedTypes.quick_fix.text",
+                        "Convert {cols_str} to text", 
+                        {"column_names": cols_str}
+                    ),
+                    "action": "prependModule",
+                    "args": ["converttotext", {"colnames": list(to_convert)}],
+                }
+            ]
+        }
     else:
-        error = ""
-        quick_fixes = []
+        error = None
 
     table = pd.melt(table, id_vars=[colname])
     table.sort_values(colname, inplace=True)
     table.reset_index(drop=True, inplace=True)
 
     if error:
-        return {"dataframe": table, "error": error, "quick_fixes": quick_fixes}
+        return (table, error)
     else:
         return table
 
@@ -58,23 +70,27 @@ def long_to_wide(
     table: pd.DataFrame, keycolnames: List[str], varcolname: str
 ) -> pd.DataFrame:
     warnings = []
-    quick_fixes = []
 
     varcol = table[varcolname]
     if varcol.dtype != object and not hasattr(varcol, "cat"):
         # Convert to str, in-place
         warnings.append(
-            (
-                'Column "%s" was auto-converted to Text because column names '
-                "must be text."
-            )
-            % varcolname
-        )
-        quick_fixes.append(
             {
-                "text": 'Convert "%s" to text' % varcolname,
-                "action": "prependModule",
-                "args": ["converttotext", {"colnames": [varcolname]}],
+                "message": i18n.trans(
+                    "long_to_wide.badColumn.notText.error",
+                    'Column "{column_name}" was auto-converted to Text '
+                    "because column names must be text.",
+                    {"column_name": varcolname}
+                ),
+                "quickFixes": [{
+                    "text": i18n.trans(
+                        "long_to_wide.badColumn.notText.quick_fix.text",
+                        'Convert "{column_name}" to text',
+                        {"column_name": varcolname},
+                    ),
+                    "action": "prependModule",
+                    "args": ["converttotext", {"colnames": [varcolname]}],
+                }]
             }
         )
         na = varcol.isnull()
@@ -87,24 +103,32 @@ def long_to_wide(
     empty = varcol.isin([np.nan, pd.NaT, None, ""])
     n_empty = np.count_nonzero(empty)
     if n_empty:
-        if n_empty == 1:
-            text_empty = "1 input row"
-        else:
-            text_empty = "{:,d} input rows".format(n_empty)
-        warnings.append('%s with empty "%s" were removed.' % (text_empty, varcolname))
+        warnings.append(i18n.trans(
+            "long_to_wide.badRows.emptyColumnHeaders.warning",
+            '{n_rows, plural, '
+            '  one {# row with empty "{column_name}" was removed.}'
+            '  other {# rows with empty "{column_name}" were removed.}'
+            '}',
+            {"n_rows": n_empty, "column_name": varcolname}
+        ))
         table = table[~empty]
         table.reset_index(drop=True, inplace=True)
 
     table.set_index(keycolnames + [varcolname], inplace=True, drop=True)
     if np.any(table.index.duplicated()):
-        return "Cannot reshape: some variables are repeated"
+        return i18n.trans(
+            "long_to_wide.error.repeatedVariables", 
+            "Cannot reshape: some variables are repeated"
+        )
     if len(table.columns) == 0:
-        return (
+        return i18n.trans(
+            "long_to_wide.error.noValueColumn", 
             "There is no Value column. "
             "All but one table column must be a Row or Column variable."
         )
     if len(table.columns) > 1:
-        return (
+        return i18n.trans(
+            "long_to_wide.error.tooManyValueColumns", 
             "There are too many Value columns. "
             "All but one table column must be a Row or Column variable. "
             "Please drop extra columns before reshaping."
@@ -115,11 +139,7 @@ def long_to_wide(
     table.reset_index(inplace=True)
 
     if warnings:
-        return {
-            "dataframe": table,
-            "error": "\n".join(warnings),
-            "quick_fixes": quick_fixes,
-        }
+        return (table, warnings)
     else:
         return table
 
@@ -151,7 +171,10 @@ def render(table, params, *, input_columns):
                 keys.append(second_key)
 
         if varcol in keys:
-            return "Cannot reshape: column and row variables must be different"
+            return i18n.trans(
+                "error.sameColumnAndRowVariables", 
+                "Cannot reshape: column and row variables must be different"
+            )
 
         return long_to_wide(table, keys, varcol)
 
@@ -190,10 +213,12 @@ def transpose(table, params, *, input_columns):
 
     if len(table) > MAX_N_COLUMNS:
         table = table.truncate(after=MAX_N_COLUMNS - 1)
-        warnings.append(
-            f"We truncated the input to {MAX_N_COLUMNS} rows so the "
-            "transposed table would have a reasonable number of columns."
-        )
+        warnings.append(i18n.trans(
+            "transpose.warnings.tooManyRows",
+            "We truncated the input to {max_columns} rows so the "
+            "transposed table would have a reasonable number of columns.",
+            {"max_columns": MAX_N_COLUMNS}
+        ))
 
     if not len(table.columns):
         # happens if we're the first module in the module stack
@@ -209,8 +234,27 @@ def transpose(table, params, *, input_columns):
 
     # Ensure headers are string. (They will become column names.)
     if input_columns[column].type != "text":
-        warnings.append(f'Headers in column "A" were auto-converted to text.')
-        colnames_auto_converted_to_text.append(column)
+        warnings.append({
+            "message": i18n.trans(
+                "transpose.headersConvertedToText.error",
+                'Headers in column "{column_name}" were auto-converted to text.',
+                {"column_name": column}
+            ),
+            "quickFixes": [
+                {
+                    "text": i18n.trans(
+                        "transpose.headersConvertedToText.quick_fix.text",
+                        "Convert {column_name} to text",
+                        {"column_name": '"column"'}
+                    ),
+                    "action": "prependModule",
+                    "args": [
+                        "converttotext",
+                        {"colnames": column},
+                    ],
+                }
+            ]
+        })
 
     # Regardless of column type, we want to convert to str. This catches lots
     # of issues:
@@ -237,15 +281,19 @@ def transpose(table, params, *, input_columns):
     unique_headers = set(headers)
 
     if "" in unique_headers:
-        warnings.append(
-            f'We renamed some columns because the input column "{column}" had '
-            "empty values."
-        )
+        warnings.append(i18n.trans(
+            "transpose.warnings.renamedColumnsDueToEmpty",
+            'We renamed some columns because the input column "{column}" had '
+            "empty values.",
+            {"column": column}
+        ))
     if len(non_empty_headers) != len(unique_headers - set([""])):
-        warnings.append(
-            f'We renamed some columns because the input column "{column}" had '
-            "duplicate values."
-        )
+        warnings.append(i18n.trans(
+            "transpose.warnings.renamedColumnsDueToDuplicate",
+            'We renamed some columns because the input column "{column}" had '
+            "duplicate values.",
+            {"column": column}
+        ))
 
     headers = list(_uniquize_colnames(headers, unique_headers))
 
@@ -256,16 +304,32 @@ def transpose(table, params, *, input_columns):
         # Convert everything to text before converting. (All values must have
         # the same type.)
         to_convert = [c for c in table.columns if input_columns[c].type != "text"]
-        colnames_auto_converted_to_text.extend(to_convert)
-        if len(to_convert) == 1:
-            start = f'Column "{to_convert[0]}" was'
-        else:
-            colnames = ", ".join(f'"{c}"' for c in to_convert)
-            start = f"Columns {colnames} were"
-        warnings.append(
-            f"{start} auto-converted to Text because all columns must have "
-            "the same type."
-        )
+        cols_str = ", ".join(f'"{c}"' for c in to_convert)
+        warnings.append({
+            "message": i18n.trans(
+                "transpose.differentColumnTypes.error",
+                "{n_columns, plural, other {Columns {column_names} were} one {Column {column_names} was}} "
+                "auto-converted to Text because all columns must have the same type.",
+                {
+                    "n_columns": len(to_convert),
+                    "column_names": cols_str
+                }
+            ),
+            "quickFixes":[
+                {
+                    "text": i18n.trans(
+                        "transpose.warnings.differentColumnTypes.quick_fix.text",
+                        "Convert {column_names} to text",
+                        {"column_names": cols_str}
+                    ),
+                    "action": "prependModule",
+                    "args": [
+                        "converttotext",
+                        {"colnames": ",".join(to_convert)},
+                    ],
+                }
+            ]
+        })
 
         for colname in to_convert:
             # TODO respect column formats ... and nix the quick-fix?
@@ -280,24 +344,8 @@ def transpose(table, params, *, input_columns):
     # Make the index (former colnames) a column
     ret.reset_index(inplace=True)
 
-    if warnings and colnames_auto_converted_to_text:
-        colnames = ", ".join(f'"{c}"' for c in colnames_auto_converted_to_text)
-        return {
-            "dataframe": ret,
-            "error": "\n".join(warnings),
-            "quick_fixes": [
-                {
-                    "text": f"Convert {colnames} to text",
-                    "action": "prependModule",
-                    "args": [
-                        "converttotext",
-                        {"colnames": ",".join(colnames_auto_converted_to_text)},
-                    ],
-                }
-            ],
-        }
     if warnings:
-        return (ret, "\n".join(warnings))
+        return (ret, warnings)
     else:
         return ret
 
