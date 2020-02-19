@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-19 08:13+0000\n"
+"POT-Creation-Date: 2020-02-19 08:23+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: el\n"
@@ -43,59 +43,59 @@ msgstr ""
 msgid "_spec.parameters.varcol.name"
 msgstr ""
 
-#: reshape.py:39
-msgid "wide_to_long.badColumns.mixedTypes.error"
+#: reshape.py:38
+msgid "wide_to_long.badColumns.mixedTypes.message"
 msgstr ""
 
-#: reshape.py:45
+#: reshape.py:47
 msgid "wide_to_long.badColumns.mixedTypes.quick_fix.text"
 msgstr ""
 
-#: reshape.py:78
-msgid "long_to_wide.badColumn.notText.error"
+#: reshape.py:77
+msgid "long_to_wide.badColumn.notText.message"
 msgstr ""
 
-#: reshape.py:85
+#: reshape.py:84
 msgid "long_to_wide.badColumn.notText.quick_fix.text"
 msgstr ""
 
-#: reshape.py:105
+#: reshape.py:104
 msgid "long_to_wide.badRows.emptyColumnHeaders.warning"
 msgstr ""
 
-#: reshape.py:118
+#: reshape.py:117
 msgid "long_to_wide.error.repeatedVariables"
 msgstr ""
 
-#: reshape.py:123
+#: reshape.py:122
 msgid "long_to_wide.error.noValueColumn"
 msgstr ""
 
-#: reshape.py:129
+#: reshape.py:128
 msgid "long_to_wide.error.tooManyValueColumns"
 msgstr ""
 
-#: reshape.py:173
+#: reshape.py:172
 msgid "error.sameColumnAndRowVariables"
 msgstr ""
 
-#: reshape.py:261
+#: reshape.py:260
 msgid "transpose.warnings.tooManyRows"
 msgstr ""
 
-#: reshape.py:280
+#: reshape.py:279
 msgid "transpose.warnings.headersConvertedToText.message"
 msgstr ""
 
-#: reshape.py:287
+#: reshape.py:286
 msgid "transpose.warnings.headersConvertedToText.quickFix.text"
 msgstr ""
 
-#: reshape.py:322
+#: reshape.py:321
 msgid "transpose.warnings.differentColumnTypes.message"
 msgstr ""
 
-#: reshape.py:329
+#: reshape.py:328
 msgid "transpose.warnings.differentColumnTypes.quickFix.text"
 msgstr ""
 

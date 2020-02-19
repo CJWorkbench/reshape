@@ -28,24 +28,23 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
         table.loc[:, to_convert] = table[to_convert].astype(str)
         table.loc[:, to_convert][na] = np.nan
 
-        cols_str = ", ".join(f'"{c}"' for c in to_convert)
         error = {
             "message": i18n.trans(
-                "wide_to_long.badColumns.mixedTypes.error",
-                "{n_columns, plural, other{Columns {column_names} were} one {Column {column_names} was}}"
+                "wide_to_long.badColumns.mixedTypes.message",
+                '{n_columns, plural, other{# columns (see "{first_colname}") were} one {Column "{first_colname}" was}} '
                 "auto-converted to Text because the "
                 "value column cannot have multiple types.",
                 {
                     "n_columns": len(to_convert),
-                    "column_names": cols_str
+                    "first_colname": to_convert[0]
                 }
             ),
             "quickFixes": [
                 {
                     "text": i18n.trans(
                         "wide_to_long.badColumns.mixedTypes.quick_fix.text",
-                        "Convert {cols_str} to text", 
-                        {"column_names": cols_str}
+                        "Convert {n_columns, plural, one {# column} other {# columns}} to text", 
+                        {"n_columns": len(to_convert)}
                     ),
                     "action": "prependModule",
                     "args": ["converttotext", {"colnames": list(to_convert)}],
@@ -76,7 +75,7 @@ def long_to_wide(
         warnings.append(
             {
                 "message": i18n.trans(
-                    "long_to_wide.badColumn.notText.error",
+                    "long_to_wide.badColumn.notText.message",
                     'Column "{column_name}" was auto-converted to Text '
                     "because column names must be text.",
                     {"column_name": varcolname}

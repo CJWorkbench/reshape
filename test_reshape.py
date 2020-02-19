@@ -62,14 +62,14 @@ class TestReshape(unittest.TestCase):
             result[1],
             {
                 "message": i18n_message(
-                    "wide_to_long.badColumns.mixedTypes.error",
-                    {"n_columns": 1, "column_names": '"A"'}
+                    "wide_to_long.badColumns.mixedTypes.message",
+                    {"n_columns": 1, "first_colname": "A"}
                 ),
                 "quickFixes": [
                     {
                         "text": i18n_message(
                             "wide_to_long.badColumns.mixedTypes.quick_fix.text",
-                            {"column_names": '"A"'}
+                            {"n_columns": 1}
                         ),
                         "action": "prependModule",
                         "args": ["converttotext", {"colnames": ["A"]}],
@@ -144,7 +144,7 @@ class TestReshape(unittest.TestCase):
             result[1],
             [{
                 "message": i18n_message(
-                    "long_to_wide.badColumn.notText.error",
+                    "long_to_wide.badColumn.notText.message",
                     {"column_name": "variable"}
                 ),
                 "quickFixes": [

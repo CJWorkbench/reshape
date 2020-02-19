@@ -30,73 +30,73 @@ msgstr ""
 msgid "_spec.parameters.varcol.name"
 msgstr ""
 
-#. default-message: {n_columns, plural, other{Columns {column_names} were} one {Column {column_names} was}}auto-converted to Text because the value column cannot have multiple types.
-#: reshape.py:39
-msgid "wide_to_long.badColumns.mixedTypes.error"
+#. default-message: {n_columns, plural, other{# columns (see "{first_colname}") were} one {Column "{first_colname}" was}} auto-converted to Text because the value column cannot have multiple types.
+#: reshape.py:38
+msgid "wide_to_long.badColumns.mixedTypes.message"
 msgstr ""
 
-#. default-message: Convert {cols_str} to text
-#: reshape.py:45
+#. default-message: Convert {n_columns, plural, one {# column} other {# columns}} to text
+#: reshape.py:47
 msgid "wide_to_long.badColumns.mixedTypes.quick_fix.text"
 msgstr ""
 
 #. default-message: Column "{column_name}" was auto-converted to Text because column names must be text.
-#: reshape.py:78
-msgid "long_to_wide.badColumn.notText.error"
+#: reshape.py:77
+msgid "long_to_wide.badColumn.notText.message"
 msgstr ""
 
 #. default-message: Convert "{column_name}" to text
-#: reshape.py:85
+#: reshape.py:84
 msgid "long_to_wide.badColumn.notText.quick_fix.text"
 msgstr ""
 
 #. default-message: {n_rows, plural,   one {# row with empty "{column_name}" was removed.}  other {# rows with empty "{column_name}" were removed.}}
-#: reshape.py:105
+#: reshape.py:104
 msgid "long_to_wide.badRows.emptyColumnHeaders.warning"
 msgstr ""
 
 #. default-message: Cannot reshape: some variables are repeated
-#: reshape.py:118
+#: reshape.py:117
 msgid "long_to_wide.error.repeatedVariables"
 msgstr ""
 
 #. default-message: There is no Value column. All but one table column must be a Row or Column variable.
-#: reshape.py:123
+#: reshape.py:122
 msgid "long_to_wide.error.noValueColumn"
 msgstr ""
 
 #. default-message: There are too many Value columns. All but one table column must be a Row or Column variable. Please drop extra columns before reshaping.
-#: reshape.py:129
+#: reshape.py:128
 msgid "long_to_wide.error.tooManyValueColumns"
 msgstr ""
 
 #. default-message: Cannot reshape: column and row variables must be different
-#: reshape.py:173
+#: reshape.py:172
 msgid "error.sameColumnAndRowVariables"
 msgstr ""
 
 #. default-message: We truncated the input to {max_columns} rows so the transposed table would have a reasonable number of columns.
-#: reshape.py:261
+#: reshape.py:260
 msgid "transpose.warnings.tooManyRows"
 msgstr ""
 
 #. default-message: Headers in column "{column_name}" were auto-converted to text.
-#: reshape.py:280
+#: reshape.py:279
 msgid "transpose.warnings.headersConvertedToText.message"
 msgstr ""
 
 #. default-message: Convert {column_name} to text
-#: reshape.py:287
+#: reshape.py:286
 msgid "transpose.warnings.headersConvertedToText.quickFix.text"
 msgstr ""
 
 #. default-message: {n_columns, plural, other {# columns (see "{first_colname}") were} one {Column "{first_colname}" was}} auto-converted to Text because all columns must have the same type.
-#: reshape.py:322
+#: reshape.py:321
 msgid "transpose.warnings.differentColumnTypes.message"
 msgstr ""
 
 #. default-message: Convert {n_columns, plural, other {# columns} one {# column}} to text
-#: reshape.py:329
+#: reshape.py:328
 msgid "transpose.warnings.differentColumnTypes.quickFix.text"
 msgstr ""
 
