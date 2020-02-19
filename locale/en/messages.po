@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-07 21:28+0000\n"
+"POT-Creation-Date: 2020-02-19 08:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -43,87 +43,75 @@ msgstr "2nd row variable"
 msgid "_spec.parameters.varcol.name"
 msgstr "Column variable"
 
-#: reshape.py:40
+#: reshape.py:39
 msgid "wide_to_long.badColumns.mixedTypes.error"
 msgstr ""
 "{n_columns, plural, other{Columns {column_names} were} one {Column "
 "{column_names} was}}auto-converted to Text because the value column "
 "cannot have multiple types."
 
-#: reshape.py:46
+#: reshape.py:45
 msgid "wide_to_long.badColumns.mixedTypes.quick_fix.text"
 msgstr "Convert {cols_str} to text"
 
-#: reshape.py:79
+#: reshape.py:78
 msgid "long_to_wide.badColumn.notText.error"
 msgstr ""
 "Column \"{column_name}\" was auto-converted to Text because column names "
 "must be text."
 
-#: reshape.py:86
+#: reshape.py:85
 msgid "long_to_wide.badColumn.notText.quick_fix.text"
 msgstr "Convert \"{column_name}\" to text"
 
-#: reshape.py:106
+#: reshape.py:105
 msgid "long_to_wide.badRows.emptyColumnHeaders.warning"
 msgstr ""
 "{n_rows, plural,   one {# row with empty \"{column_name}\" was removed.}"
 "  other {# rows with empty \"{column_name}\" were removed.}}"
 
-#: reshape.py:119
+#: reshape.py:118
 msgid "long_to_wide.error.repeatedVariables"
 msgstr "Cannot reshape: some variables are repeated"
 
-#: reshape.py:124
+#: reshape.py:123
 msgid "long_to_wide.error.noValueColumn"
 msgstr ""
 "There is no Value column. All but one table column must be a Row or "
 "Column variable."
 
-#: reshape.py:130
+#: reshape.py:129
 msgid "long_to_wide.error.tooManyValueColumns"
 msgstr ""
 "There are too many Value columns. All but one table column must be a Row "
 "or Column variable. Please drop extra columns before reshaping."
 
-#: reshape.py:174
+#: reshape.py:173
 msgid "error.sameColumnAndRowVariables"
 msgstr "Cannot reshape: column and row variables must be different"
 
-#: reshape.py:216
+#: reshape.py:261
 msgid "transpose.warnings.tooManyRows"
 msgstr ""
 "We truncated the input to {max_columns} rows so the transposed table "
 "would have a reasonable number of columns."
 
-#: reshape.py:238
-msgid "transpose.headersConvertedToText.error"
+#: reshape.py:280
+msgid "transpose.warnings.headersConvertedToText.message"
 msgstr "Headers in column \"{column_name}\" were auto-converted to text."
 
-#: reshape.py:245
-msgid "transpose.headersConvertedToText.quick_fix.text"
+#: reshape.py:287
+msgid "transpose.warnings.headersConvertedToText.quickFix.text"
 msgstr "Convert {column_name} to text"
 
-#: reshape.py:284
-msgid "transpose.warnings.renamedColumnsDueToEmpty"
+#: reshape.py:322
+msgid "transpose.warnings.differentColumnTypes.message"
 msgstr ""
-"We renamed some columns because the input column \"{column}\" had empty "
-"values."
+"{n_columns, plural, other {# columns (see \"{first_colname}\") were} one "
+"{Column \"{first_colname}\" was}} auto-converted to Text because all "
+"columns must have the same type."
 
-#: reshape.py:291
-msgid "transpose.warnings.renamedColumnsDueToDuplicate"
-msgstr ""
-"We renamed some columns because the input column \"{column}\" had "
-"duplicate values."
-
-#: reshape.py:314
-msgid "transpose.differentColumnTypes.error"
-msgstr ""
-"{n_columns, plural, other {Columns {column_names} were} one {Column "
-"{column_names} was}} auto-converted to Text because all columns must have"
-" the same type."
-
-#: reshape.py:320
-msgid "transpose.warnings.differentColumnTypes.quick_fix.text"
-msgstr "Convert {column_names} to text"
+#: reshape.py:329
+msgid "transpose.warnings.differentColumnTypes.quickFix.text"
+msgstr "Convert {n_columns, plural, other {# columns} one {# column}} to text"
 

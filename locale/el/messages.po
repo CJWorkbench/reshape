@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-07 21:28+0000\n"
+"POT-Creation-Date: 2020-02-19 08:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: el\n"
@@ -43,67 +43,59 @@ msgstr ""
 msgid "_spec.parameters.varcol.name"
 msgstr ""
 
-#: reshape.py:40
+#: reshape.py:39
 msgid "wide_to_long.badColumns.mixedTypes.error"
 msgstr ""
 
-#: reshape.py:46
+#: reshape.py:45
 msgid "wide_to_long.badColumns.mixedTypes.quick_fix.text"
 msgstr ""
 
-#: reshape.py:79
+#: reshape.py:78
 msgid "long_to_wide.badColumn.notText.error"
 msgstr ""
 
-#: reshape.py:86
+#: reshape.py:85
 msgid "long_to_wide.badColumn.notText.quick_fix.text"
 msgstr ""
 
-#: reshape.py:106
+#: reshape.py:105
 msgid "long_to_wide.badRows.emptyColumnHeaders.warning"
 msgstr ""
 
-#: reshape.py:119
+#: reshape.py:118
 msgid "long_to_wide.error.repeatedVariables"
 msgstr ""
 
-#: reshape.py:124
+#: reshape.py:123
 msgid "long_to_wide.error.noValueColumn"
 msgstr ""
 
-#: reshape.py:130
+#: reshape.py:129
 msgid "long_to_wide.error.tooManyValueColumns"
 msgstr ""
 
-#: reshape.py:174
+#: reshape.py:173
 msgid "error.sameColumnAndRowVariables"
 msgstr ""
 
-#: reshape.py:216
+#: reshape.py:261
 msgid "transpose.warnings.tooManyRows"
 msgstr ""
 
-#: reshape.py:238
-msgid "transpose.headersConvertedToText.error"
+#: reshape.py:280
+msgid "transpose.warnings.headersConvertedToText.message"
 msgstr ""
 
-#: reshape.py:245
-msgid "transpose.headersConvertedToText.quick_fix.text"
+#: reshape.py:287
+msgid "transpose.warnings.headersConvertedToText.quickFix.text"
 msgstr ""
 
-#: reshape.py:284
-msgid "transpose.warnings.renamedColumnsDueToEmpty"
+#: reshape.py:322
+msgid "transpose.warnings.differentColumnTypes.message"
 msgstr ""
 
-#: reshape.py:291
-msgid "transpose.warnings.renamedColumnsDueToDuplicate"
-msgstr ""
-
-#: reshape.py:314
-msgid "transpose.differentColumnTypes.error"
-msgstr ""
-
-#: reshape.py:320
-msgid "transpose.warnings.differentColumnTypes.quick_fix.text"
+#: reshape.py:329
+msgid "transpose.warnings.differentColumnTypes.quickFix.text"
 msgstr ""
 

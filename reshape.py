@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_datetime64_dtype
 from cjwmodule import i18n
-
-
-MAX_N_COLUMNS = 100
+from dataclasses import dataclass
+from cjwmodule.util.colnames import gen_unique_clean_colnames_and_warn
 
 
 def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
@@ -207,129 +206,134 @@ def migrate_params(params):
 # 1. Find the bug in the `transpose` module. Unit-test it; fix; deploy.
 # 2. Copy/paste the `transpose` module's "render()" method here.
 # 3. Rename `render(...)` to `transpose(table, params)`
+# 4. Add `"transpose."` as a prefix to `i18n.trans` ids
+# 5. Copy translations of transpose messages (adapting their ids as in the previous step)
+#    to `locale/{locale}/messages.po for all locales except `"en"`
+
+# hard-code settings for now. TODO have Workbench pass render(..., settings=...)
+@dataclass
+class Settings:
+    MAX_COLUMNS_PER_TABLE: int
+    MAX_BYTES_PER_COLUMN_NAME: int
+
+
+settings = Settings(99, 120)
+
+
+@dataclass
+class GenColnamesResult:
+    names: List[str]
+    """All column names for the output table (even the first column)."""
+
+    warnings: List[str]
+    """All the things we should tell the user about how we tweaked names."""
+
+
+def _gen_colnames_and_warn(
+    first_colname: str, first_column: pd.Series
+) -> GenColnamesResult:
+    """
+    Generate transposed-table column names.
+
+    If `first_colname` is empty, `column.name` is the first output column. If
+    both are empty, auto-generate the column name (and warn).
+
+    Warn if ASCII-cleaning names, renaming duplicates, truncating names or
+    auto-generating names.
+
+    Assume `first_column` is text without nulls.
+    """
+    input_names = [first_colname or first_column.name]
+    input_names.extend(list(first_column.values))
+
+    names, warnings = gen_unique_clean_colnames_and_warn(input_names, settings=settings)
+
+    return GenColnamesResult(names, warnings)
+
+
 def transpose(table, params, *, input_columns):
     warnings = []
     colnames_auto_converted_to_text = []
 
-    if len(table) > MAX_N_COLUMNS:
-        table = table.truncate(after=MAX_N_COLUMNS - 1)
-        warnings.append(i18n.trans(
-            "transpose.warnings.tooManyRows",
-            "We truncated the input to {max_columns} rows so the "
-            "transposed table would have a reasonable number of columns.",
-            {"max_columns": MAX_N_COLUMNS}
-        ))
+    if len(table) > settings.MAX_COLUMNS_PER_TABLE:
+        table = table.truncate(after=settings.MAX_COLUMNS_PER_TABLE - 1)
+        warnings.append(
+            i18n.trans(
+                "transpose.warnings.tooManyRows",
+                "We truncated the input to {max_columns} rows so the "
+                "transposed table would have a reasonable number of columns.",
+                {"max_columns": settings.MAX_COLUMNS_PER_TABLE},
+            )
+        )
 
     if not len(table.columns):
         # happens if we're the first module in the module stack
         return pd.DataFrame()
 
-    # If user does not supply a name (default), use the input table's first
-    # column name as the output table's first column name.
-    first_colname = params["firstcolname"].strip() or table.columns[0]
-
     column = table.columns[0]
-    headers_series = table[column]
+    first_column = table[column]
     table.drop(column, axis=1, inplace=True)
 
-    # Ensure headers are string. (They will become column names.)
     if input_columns[column].type != "text":
-        warnings.append({
-            "message": i18n.trans(
-                "transpose.headersConvertedToText.error",
-                'Headers in column "{column_name}" were auto-converted to text.',
-                {"column_name": column}
-            ),
-            "quickFixes": [
-                {
-                    "text": i18n.trans(
-                        "transpose.headersConvertedToText.quick_fix.text",
-                        "Convert {column_name} to text",
-                        {"column_name": '"column"'}
-                    ),
-                    "action": "prependModule",
-                    "args": [
-                        "converttotext",
-                        {"colnames": column},
-                    ],
-                }
-            ]
-        })
+        warnings.append(
+            {
+                "message": i18n.trans(
+                    "transpose.warnings.headersConvertedToText.message",
+                    'Headers in column "{column_name}" were auto-converted to text.',
+                    {"column_name": column},
+                ),
+                "quickFixes": [
+                    {
+                        "text": i18n.trans(
+                            "transpose.warnings.headersConvertedToText.quickFix.text",
+                            "Convert {column_name} to text",
+                            {"column_name": '"%s"' % column},
+                        ),
+                        "action": "prependModule",
+                        "args": ["converttotext", {"colnames": [column]},],
+                    }
+                ],
+            }
+        )
 
-    # Regardless of column type, we want to convert to str. This catches lots
-    # of issues:
-    #
-    # * Column names shouldn't be a CategoricalIndex; that would break other
-    #   Pandas functions. See https://github.com/pandas-dev/pandas/issues/19136
-    # * nulls should be converted to '' instead of 'nan'
-    # * Non-str should be converted to str
-    # * `first_colname` will be the first element (so we can enforce its
-    #   uniqueness).
-    #
-    # After this step, `headers` will be a List[str]. "" is okay for now: we'll
-    # catch that later.
-    na = headers_series.isna()
-    headers_series = headers_series.astype(str)
-    headers_series[na] = ""  # Empty values are all equivalent
-    headers_series[headers_series.isna()] = ""
-    headers = headers_series.tolist()
-    headers.insert(0, first_colname)
-    non_empty_headers = [h for h in headers if h]
+    # Ensure headers are string. (They will become column names.)
+    # * categorical => str
+    # * nan => ""
+    # * non-text => str
+    na = first_column.isna()
+    first_column = first_column.astype(str)
+    first_column[na] = ""  # Empty values are all equivalent
 
-    # unique_headers: all the "valuable" header names -- the ones we won't
-    # rename any duplicate/empty headers to.
-    unique_headers = set(headers)
-
-    if "" in unique_headers:
-        warnings.append(i18n.trans(
-            "transpose.warnings.renamedColumnsDueToEmpty",
-            'We renamed some columns because the input column "{column}" had '
-            "empty values.",
-            {"column": column}
-        ))
-    if len(non_empty_headers) != len(unique_headers - set([""])):
-        warnings.append(i18n.trans(
-            "transpose.warnings.renamedColumnsDueToDuplicate",
-            'We renamed some columns because the input column "{column}" had '
-            "duplicate values.",
-            {"column": column}
-        ))
-
-    headers = list(_uniquize_colnames(headers, unique_headers))
-
-    table.index = headers[1:]
+    gen_headers_result = _gen_colnames_and_warn(params["firstcolname"], first_column)
+    warnings.extend(gen_headers_result.warnings)
 
     input_types = set(c.type for c in input_columns.values() if c.name != column)
     if len(input_types) > 1:
         # Convert everything to text before converting. (All values must have
         # the same type.)
         to_convert = [c for c in table.columns if input_columns[c].type != "text"]
-        cols_str = ", ".join(f'"{c}"' for c in to_convert)
-        warnings.append({
-            "message": i18n.trans(
-                "transpose.differentColumnTypes.error",
-                "{n_columns, plural, other {Columns {column_names} were} one {Column {column_names} was}} "
-                "auto-converted to Text because all columns must have the same type.",
+        if to_convert:
+            warnings.append(
                 {
-                    "n_columns": len(to_convert),
-                    "column_names": cols_str
-                }
-            ),
-            "quickFixes":[
-                {
-                    "text": i18n.trans(
-                        "transpose.warnings.differentColumnTypes.quick_fix.text",
-                        "Convert {column_names} to text",
-                        {"column_names": cols_str}
+                    "message": i18n.trans(
+                        "transpose.warnings.differentColumnTypes.message",
+                        '{n_columns, plural, other {# columns (see "{first_colname}") were} one {Column "{first_colname}" was}} '
+                        "auto-converted to Text because all columns must have the same type.",
+                        {"n_columns": len(to_convert), "first_colname": to_convert[0]},
                     ),
-                    "action": "prependModule",
-                    "args": [
-                        "converttotext",
-                        {"colnames": ",".join(to_convert)},
+                    "quickFixes": [
+                        {
+                            "text": i18n.trans(
+                                "transpose.warnings.differentColumnTypes.quickFix.text",
+                                "Convert {n_columns, plural, other {# columns} one {# column}} to text",
+                                {"n_columns": len(to_convert)},
+                            ),
+                            "action": "prependModule",
+                            "args": ["converttotext", {"colnames": to_convert},],
+                        }
                     ],
                 }
-            ]
-        })
+            )
 
         for colname in to_convert:
             # TODO respect column formats ... and nix the quick-fix?
@@ -338,9 +342,10 @@ def transpose(table, params, *, input_columns):
             table[colname][na] = np.nan
 
     # The actual transpose
+    table.index = gen_headers_result.names[1:]
     ret = table.T
     # Set the name of the index: it will become the name of the first column.
-    ret.index.name = first_colname
+    ret.index.name = gen_headers_result.names[0]
     # Make the index (former colnames) a column
     ret.reset_index(inplace=True)
 
@@ -348,34 +353,4 @@ def transpose(table, params, *, input_columns):
         return (ret, warnings)
     else:
         return ret
-
-
-def _uniquize_colnames(
-    colnames: Iterator[str], never_rename_to: Set[str]
-) -> Iterator[str]:
-    """
-    Rename columns to prevent duplicates or empty column names.
-
-    The algorithm: iterate over each `colname` and add to an internal "seen".
-    When we encounter a colname we've seen, append " 1", " 2", " 3", etc. to it
-    until we encounter a colname we've never seen that is not in
-    `never_rename_to`.
-    """
-    seen = set()
-    for colname in colnames:
-        force_add_number = False
-        if not colname:
-            colname = "unnamed"
-            force_add_number = "unnamed" in never_rename_to
-        if colname in seen or force_add_number:
-            for i in range(1, 999999):
-                try_colname = f"{colname} {i}"
-                if try_colname not in seen and try_colname not in never_rename_to:
-                    colname = try_colname
-                    break
-
-        seen.add(colname)
-        yield colname
-
-
 # END copy/paste
