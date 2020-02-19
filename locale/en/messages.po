@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-19 08:00+0000\n"
+"POT-Creation-Date: 2020-02-19 08:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -43,28 +43,28 @@ msgstr "2nd row variable"
 msgid "_spec.parameters.varcol.name"
 msgstr "Column variable"
 
-#: reshape.py:237
+#: reshape.py:239
 msgid "transpose.warnings.tooManyRows"
 msgstr ""
 "We truncated the input to {max_columns} rows so the transposed table "
 "would have a reasonable number of columns."
 
-#: reshape.py:256
+#: reshape.py:258
 msgid "transpose.warnings.headersConvertedToText.message"
 msgstr "Headers in column \"{column_name}\" were auto-converted to text."
 
-#: reshape.py:263
+#: reshape.py:265
 msgid "transpose.warnings.headersConvertedToText.quickFix.text"
 msgstr "Convert {column_name} to text"
 
-#: reshape.py:298
+#: reshape.py:300
 msgid "transpose.warnings.differentColumnTypes.message"
 msgstr ""
 "{n_columns, plural, other {# columns (see \"{first_colname}\") were} one "
 "{Column \"{first_colname}\" was}} auto-converted to Text because all "
 "columns must have the same type."
 
-#: reshape.py:305
+#: reshape.py:307
 msgid "transpose.warnings.differentColumnTypes.quickFix.text"
 msgstr "Convert {n_columns, plural, other {# columns} one {# column}} to text"
 

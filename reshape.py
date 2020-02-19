@@ -4,6 +4,8 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_datetime64_dtype
 from dataclasses import dataclass
 from cjwmodule.util.colnames import gen_unique_clean_colnames_and_warn
+from cjwmodule import i18n
+
 
 def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
     # Check all values are the same type
