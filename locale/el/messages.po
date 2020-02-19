@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-19 08:23+0000\n"
+"POT-Creation-Date: 2020-02-19 08:42+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: el\n"
@@ -20,28 +20,28 @@ msgstr ""
 "Generated-By: Babel 2.8.0\n"
 
 msgid "_spec.name"
-msgstr ""
+msgstr "Αναδιαμόρφωση"
 
 msgid "_spec.description"
-msgstr ""
+msgstr "Μετατροπή του πίνακα από μακρά σε πλατιά μορφή και αντίστροφα.."
 
 msgid "_spec.parameters.direction.options.widetolong.label"
-msgstr ""
+msgstr "Από πλατιά σε μακρά."
 
 msgid "_spec.parameters.direction.options.longtowide.label"
-msgstr ""
+msgstr "Από μακρά σε πλατιά."
 
 msgid "_spec.parameters.direction.options.transpose.label"
-msgstr ""
+msgstr "Αντιμετάθεση"
 
 msgid "_spec.parameters.colnames.name"
-msgstr ""
+msgstr "Μεταβλητή σειράς"
 
 msgid "_spec.parameters.has_second_key.name"
-msgstr ""
+msgstr "2η μεταβλητή σειράς"
 
 msgid "_spec.parameters.varcol.name"
-msgstr ""
+msgstr "Μεταβλητή στήλης"
 
 #: reshape.py:38
 msgid "wide_to_long.badColumns.mixedTypes.message"
