@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from reshape import render, migrate_params
+from cjwmodule.testing.i18n import i18n_message
 
 
 Column = namedtuple("Column", ("name", "type"))
@@ -48,7 +49,7 @@ class TestReshape(unittest.TestCase):
         in_table = pd.DataFrame({"X": ["x", "y"], "A": [1, 2], "B": ["y", np.nan]})
         result = render(in_table, P("widetolong", "X"), **DefaultKwargs)
         assert_frame_equal(
-            result["dataframe"],
+            result[0],
             pd.DataFrame(
                 {
                     "X": ["x", "x", "y", "y"],
@@ -58,23 +59,25 @@ class TestReshape(unittest.TestCase):
             ),
         )
         self.assertEqual(
-            result["error"],
-            (
-                'Columns "A" were auto-converted to Text because the value column '
-                "cannot have multiple types."
-            ),
+            result[1],
+            {
+                "message": i18n_message(
+                    "wide_to_long.badColumns.mixedTypes.message",
+                    {"n_columns": 1, "first_colname": "A"}
+                ),
+                "quickFixes": [
+                    {
+                        "text": i18n_message(
+                            "wide_to_long.badColumns.mixedTypes.quick_fix.text",
+                            {"n_columns": 1}
+                        ),
+                        "action": "prependModule",
+                        "args": ["converttotext", {"colnames": ["A"]}],
+                    }
+                ],
+            }
         )
-        self.assertEqual(
-            result["quick_fixes"],
-            [
-                {
-                    "text": 'Convert "A" to text',
-                    "action": "prependModule",
-                    "args": ["converttotext", {"colnames": ["A"]}],
-                }
-            ],
-        )
-        self.assertIsInstance(result["quick_fixes"][0]["args"][1]["colnames"], list)
+        self.assertIsInstance(result[1]["quickFixes"][0]["args"][1]["colnames"], list)
 
     def test_wide_to_long_no_values_or_variables_categorical_id_var(self):
         result = render(
@@ -134,25 +137,27 @@ class TestReshape(unittest.TestCase):
         )
         result = render(in_table, P("longtowide", "x", "variable"), **DefaultKwargs)
         assert_frame_equal(
-            result["dataframe"],
+            result[0],
             pd.DataFrame({"x": [1, 2, 3], "4": ["a", "b", "c"], "5": ["d", "e", "f"]}),
         )
         self.assertEqual(
-            result["error"],
-            (
-                'Column "variable" was auto-converted to Text because column '
-                "names must be text."
-            ),
-        )
-        self.assertEqual(
-            result["quick_fixes"],
-            [
-                {
-                    "text": 'Convert "variable" to text',
-                    "action": "prependModule",
-                    "args": ["converttotext", {"colnames": ["variable"]}],
-                }
-            ],
+            result[1],
+            [{
+                "message": i18n_message(
+                    "long_to_wide.badColumn.notText.message",
+                    {"column_name": "variable"}
+                ),
+                "quickFixes": [
+                    {
+                        "text": i18n_message(
+                            "long_to_wide.badColumn.notText.quick_fix.text",
+                            {"column_name": "variable"},
+                        ),
+                        "action": "prependModule",
+                        "args": ["converttotext", {"colnames": ["variable"]}],
+                    }
+                ],
+            }]
         )
 
     def test_long_to_wide_checkbox_but_no_second_key(self):
@@ -204,7 +209,7 @@ class TestReshape(unittest.TestCase):
             {"x": [1, 1], "variable": ["A", "A"], "value": ["x", "y"]}
         )
         out = render(in_table, P("longtowide", "x", "variable"), **DefaultKwargs)
-        self.assertEqual(out, "Cannot reshape: some variables are repeated")
+        self.assertEqual(out, i18n_message("long_to_wide.error.repeatedVariables"))
 
     def test_long_to_wide_varcol_in_key(self):
         in_table = pd.DataFrame(
@@ -212,7 +217,7 @@ class TestReshape(unittest.TestCase):
         )
         out = render(in_table, P("longtowide", "x", "x"), **DefaultKwargs)
         self.assertEqual(
-            out, ("Cannot reshape: column and row variables must be different")
+            out, i18n_message("error.sameColumnAndRowVariables")
         )
 
     def test_long_to_wide_nix_empty(self):
@@ -220,9 +225,13 @@ class TestReshape(unittest.TestCase):
             {"x": [1, 2, 3], "variable": ["", np.nan, "foo"], "value": ["a", "b", "c"]}
         )
         result = render(in_table, P("longtowide", "x", "variable"), **DefaultKwargs)
-        assert_frame_equal(result["dataframe"], pd.DataFrame({"x": [3], "foo": ["c"]}))
+        assert_frame_equal(result[0], pd.DataFrame({"x": [3], "foo": ["c"]}))
         self.assertEqual(
-            result["error"], '2 input rows with empty "variable" were removed.'
+            result[1], 
+            [i18n_message(
+                "long_to_wide.badRows.emptyColumnHeaders.warning",
+                {"n_rows": 2, "column_name": "variable"}
+            )]
         )
 
     def test_long_to_wide_nix_empty_leaving_empty_table(self):
@@ -231,10 +240,14 @@ class TestReshape(unittest.TestCase):
         )
         result = render(in_table, P("longtowide", "x", "variable"), **DefaultKwargs)
         assert_frame_equal(
-            result["dataframe"], pd.DataFrame({"x": pd.Series([], dtype=int)})
+            result[0], pd.DataFrame({"x": pd.Series([], dtype=int)})
         )
         self.assertEqual(
-            result["error"], '2 input rows with empty "variable" were removed.'
+            result[1], 
+            [i18n_message(
+                "long_to_wide.badRows.emptyColumnHeaders.warning",
+                {"n_rows": 2, "column_name": "variable"}
+            )]
         )
 
     def test_long_to_wide_error_too_many_columns(self):
@@ -249,7 +262,7 @@ class TestReshape(unittest.TestCase):
         result = render(in_table, P("longtowide", "x", "variable"), **DefaultKwargs)
         self.assertEqual(
             result,
-            "There are too many Value columns. All but one table column must be a Row or Column variable. Please drop extra columns before reshaping.",
+            i18n_message("long_to_wide.error.tooManyValueColumns")
         )
 
     def test_long_to_wide_error_not_enough_columns(self):
@@ -257,7 +270,7 @@ class TestReshape(unittest.TestCase):
         result = render(in_table, P("longtowide", "x", "variable"), **DefaultKwargs)
         self.assertEqual(
             result,
-            "There is no Value column. All but one table column must be a Row or Column variable.",
+            i18n_message("long_to_wide.error.noValueColumn")
         )
 
     def test_transpose(self):
