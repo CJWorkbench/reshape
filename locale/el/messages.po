@@ -46,7 +46,7 @@ msgstr "Μεταβλητή στήλης"
 #: reshape.py:38
 msgid "wide_to_long.badColumns.mixedTypes.message"
 msgstr ""
-"Έγινε αυτόματη μετατροπή {n_columns, plural, other{# στηλών (δες \""
+"Έγινε αυτόματη μετατροπή {n_columns, plural, other{# στηλών (δείτε \""
 "{first_colname}\")} one {της στήλης \"{first_colname}\"}} σε κείμενο επειδή "
 "η στήλη τιμής δεν μπορεί να έχει διαφορετικούς τύπους."
 
@@ -113,7 +113,7 @@ msgstr "Μετατροπή της στήλης {column_name} σε κείμενο
 #: reshape.py:321
 msgid "transpose.warnings.differentColumnTypes.message"
 msgstr ""
-"Έγινε αυτόματη μετατροπή {n_columns, plural, other {# στηλών (δες \""
+"Έγινε αυτόματη μετατροπή {n_columns, plural, other {# στηλών (δείτε \""
 "{first_colname}\")} one {της στήλης \"{first_colname}\"}} σε κείμενο επειδή "
 "όλες οι στήλες πρέπει να ανήκουν στον ίδιο τύπο."
 
