@@ -7,14 +7,44 @@ from dataclasses import dataclass
 from cjwmodule.util.colnames import gen_unique_clean_colnames_and_warn
 
 
-def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
+def wide_to_long(
+    table: pd.DataFrame,
+    key_colnames: List[str],
+    variable_colname: str,
+    value_colname: str,
+) -> pd.DataFrame:
+    if variable_colname in key_colnames or value_colname in key_colnames:
+        errors = []
+
+        if variable_colname in key_colnames:
+            errors.append(
+                i18n.trans(
+                    "wide_to_long.badColumns.varcolname.conflict",
+                    "You entered a variable-column name that is already in the table. Please change it.",
+                )
+            )
+        if value_colname in key_colnames:
+            errors.append(
+                i18n.trans(
+                    "wide_to_long.badColumns.valcolname.conflict",
+                    "You entered a value-column name that is already in the table. Please change it.",
+                )
+            )
+        return (None, errors)
+
     # Check all values are the same type
-    value_table = table[set(table.columns).difference([colname])]
+    value_table = table[set(table.columns).difference(key_colnames)]
 
     if value_table.empty:
         # Avoids 'No objects to concatenate' when colname is categorical and
         # there are no values or other columns
-        return pd.DataFrame({colname: [], "variable": [], "value": []}, dtype=str)
+        return pd.DataFrame(
+            {
+                colname: []
+                for colname in [*table.columns, variable_colname, value_colname]
+            },
+            dtype=str,
+        )
 
     value_dtypes = value_table.dtypes
     are_numeric = value_dtypes.map(is_numeric_dtype)
@@ -34,28 +64,27 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
                 '{n_columns, plural, other{# columns (see "{first_colname}") were} one {Column "{first_colname}" was}} '
                 "auto-converted to Text because the "
                 "value column cannot have multiple types.",
-                {
-                    "n_columns": len(to_convert),
-                    "first_colname": to_convert[0]
-                }
+                {"n_columns": len(to_convert), "first_colname": to_convert[0]},
             ),
             "quickFixes": [
                 {
                     "text": i18n.trans(
                         "wide_to_long.badColumns.mixedTypes.quick_fix.text",
-                        "Convert {n_columns, plural, one {# column} other {# columns}} to text", 
-                        {"n_columns": len(to_convert)}
+                        "Convert {n_columns, plural, one {# column} other {# columns}} to text",
+                        {"n_columns": len(to_convert)},
                     ),
                     "action": "prependModule",
                     "args": ["converttotext", {"colnames": list(to_convert)}],
                 }
-            ]
+            ],
         }
     else:
         error = None
 
-    table = pd.melt(table, id_vars=[colname])
-    table.sort_values(colname, inplace=True)
+    table = pd.melt(
+        table, id_vars=key_colnames, var_name=variable_colname, value_name=value_colname
+    )
+    table.sort_values(key_colnames, inplace=True)
     table.reset_index(drop=True, inplace=True)
 
     if error:
@@ -65,11 +94,11 @@ def wide_to_long(table: pd.DataFrame, colname: str) -> pd.DataFrame:
 
 
 def long_to_wide(
-    table: pd.DataFrame, keycolnames: List[str], varcolname: str
+    table: pd.DataFrame, key_colnames: List[str], variable_colname: str
 ) -> pd.DataFrame:
     warnings = []
 
-    varcol = table[varcolname]
+    varcol = table[variable_colname]
     if varcol.dtype != object and not hasattr(varcol, "cat"):
         # Convert to str, in-place
         warnings.append(
@@ -78,58 +107,63 @@ def long_to_wide(
                     "long_to_wide.badColumn.notText.message",
                     'Column "{column_name}" was auto-converted to Text '
                     "because column names must be text.",
-                    {"column_name": varcolname}
+                    {"column_name": variable_colname},
                 ),
-                "quickFixes": [{
-                    "text": i18n.trans(
-                        "long_to_wide.badColumn.notText.quick_fix.text",
-                        'Convert "{column_name}" to text',
-                        {"column_name": varcolname},
-                    ),
-                    "action": "prependModule",
-                    "args": ["converttotext", {"colnames": [varcolname]}],
-                }]
+                "quickFixes": [
+                    {
+                        "text": i18n.trans(
+                            "long_to_wide.badColumn.notText.quick_fix.text",
+                            'Convert "{column_name}" to text',
+                            {"column_name": variable_colname},
+                        ),
+                        "action": "prependModule",
+                        "args": ["converttotext", {"colnames": [variable_colname]}],
+                    }
+                ],
             }
         )
         na = varcol.isnull()
         varcol = varcol.astype(str)
         varcol[na] = np.nan
-        table[varcolname] = varcol
+        table[variable_colname] = varcol
 
     # Remove empty values, in-place. Empty column headers aren't allowed.
     # https://www.pivotaltracker.com/story/show/162648330
     empty = varcol.isin([np.nan, pd.NaT, None, ""])
     n_empty = np.count_nonzero(empty)
     if n_empty:
-        warnings.append(i18n.trans(
-            "long_to_wide.badRows.emptyColumnHeaders.warning",
-            '{n_rows, plural, '
-            '  one {# row with empty "{column_name}" was removed.}'
-            '  other {# rows with empty "{column_name}" were removed.}'
-            '}',
-            {"n_rows": n_empty, "column_name": varcolname}
-        ))
+        warnings.append(
+            i18n.trans(
+                "long_to_wide.badRows.emptyColumnHeaders.warning",
+                "{n_rows, plural, "
+                '  one {# row with empty "{column_name}" was removed.}'
+                '  other {# rows with empty "{column_name}" were removed.}'
+                "}",
+                {"n_rows": n_empty, "column_name": variable_colname},
+            )
+        )
         table = table[~empty]
         table.reset_index(drop=True, inplace=True)
 
-    table.set_index(keycolnames + [varcolname], inplace=True, drop=True)
+    table.set_index(key_colnames + [variable_colname], inplace=True, drop=True)
     if np.any(table.index.duplicated()):
         return i18n.trans(
-            "long_to_wide.error.repeatedVariables", 
-            "Cannot reshape: some variables are repeated"
+            "long_to_wide.error.repeatedVariables",
+            "Some variables are repeated. Please add Row columns to uniquely "
+            "identify each record.",
         )
     if len(table.columns) == 0:
         return i18n.trans(
-            "long_to_wide.error.noValueColumn", 
+            "long_to_wide.error.noValueColumn",
             "There is no Value column. "
-            "All but one table column must be a Row or Column variable."
+            "All but one table column must be a Row or Column variable.",
         )
     if len(table.columns) > 1:
         return i18n.trans(
-            "long_to_wide.error.tooManyValueColumns", 
+            "long_to_wide.error.tooManyValueColumns",
             "There are too many Value columns. "
             "All but one table column must be a Row or Column variable. "
-            "Please drop extra columns before reshaping."
+            "Please drop extra columns before reshaping.",
         )
 
     table = table.unstack()
@@ -143,40 +177,42 @@ def long_to_wide(
 
 
 def render(table, params, *, input_columns):
-    dir = params["direction"]
-    colname = params["colnames"]  # bad param name! It's single-column
-    varcol = params["varcol"]
+    operation = params["operation"]
 
-    # no columns selected and not transpose, NOP
-    if not colname and dir != "transpose":
-        return table
-
-    if dir == "widetolong":
-        return wide_to_long(table, colname)
-
-    elif dir == "longtowide":
-        if not varcol:
-            # gotta have this parameter
+    if operation == "widetolong":
+        if (
+            not params["key_colnames"]
+            or not params["wtl_varcolname"]
+            or not params["wtl_valcolname"]
+        ):
+            # missing parameters
             return table
 
-        keys = [colname]
+        return wide_to_long(
+            table,
+            key_colnames=params["key_colnames"],
+            variable_colname=params["wtl_varcolname"],
+            value_colname=params["wtl_valcolname"],
+        )
 
-        has_second_key = params["has_second_key"]
-        # If second key is used and present, append it to the list of columns
-        if has_second_key:
-            second_key = params["second_key"]
-            if second_key in table.columns:
-                keys.append(second_key)
+    elif operation == "longtowide":
+        if not params["key_colnames"] or not params["ltw_varcolname"]:
+            # missing parameters
+            return table
 
-        if varcol in keys:
+        if params["ltw_varcolname"] in params["key_colnames"]:
             return i18n.trans(
-                "error.sameColumnAndRowVariables", 
-                "Cannot reshape: column and row variables must be different"
+                "error.sameColumnAndRowVariables",
+                "Cannot reshape: column and row variables must be different",
             )
 
-        return long_to_wide(table, keys, varcol)
+        return long_to_wide(
+            table,
+            key_colnames=params["key_colnames"],
+            variable_colname=params["ltw_varcolname"],
+        )
 
-    elif dir == "transpose":
+    elif operation == "transpose":
         return transpose(
             table,
             # Backwards-compat because we published it like this way back when
@@ -192,10 +228,39 @@ def _migrate_params_v0_to_v1(params):
     return params
 
 
+def _migrate_params_v1_to_v2(params):
+    # v1: "direction". v2: "operation"
+    # v1: "colnames" (singular), "has_second_key", "second_key"; v2: "key_colnames"
+    # v1: "varcol" (long-to-wide); v2: "ltw_varcolname"
+    # v2: "wtl_varcolname"
+    # v2: "wtl_valcolname"
+
+    # First, build colnames
+    key_colnames = []
+    if params["colnames"]:
+        key_colnames.append(params["colnames"])
+    if (
+        params["has_second_key"]
+        and params["second_key"]
+        and params["direction"] == "longtowide"  # v1 wtl had no second_key
+    ):
+        key_colnames.append(params["second_key"])
+
+    return dict(
+        operation=params["direction"],
+        key_colnames=key_colnames,
+        ltw_varcolname=params["varcol"],
+        wtl_varcolname="variable",
+        wtl_valcolname="value",
+    )
+
+
 def migrate_params(params):
     # Convert numeric direction parameter to string labels, if needed
-    if isinstance(params["direction"], int):
+    if "direction" in params and isinstance(params["direction"], int):
         params = _migrate_params_v0_to_v1(params)
+    if "has_second_key" in params:
+        params = _migrate_params_v1_to_v2(params)
 
     return params
 
@@ -352,4 +417,6 @@ def transpose(table, params, *, input_columns):
         return (ret, warnings)
     else:
         return ret
+
+
 # END copy/paste
