@@ -60,7 +60,11 @@ class TestReshape(unittest.TestCase):
             **DefaultKwargs
         )
         self.assertEqual(
-            out, (None, [i18n_message("wide_to_long.badColumns.varcolname.conflict")],),
+            out,
+            (
+                None,
+                [i18n_message("wide_to_long.badColumns.varcolname.conflict")],
+            ),
         )
 
     def test_wide_to_long_valcolname_conflict(self):
@@ -70,7 +74,8 @@ class TestReshape(unittest.TestCase):
             **DefaultKwargs
         )
         self.assertEqual(
-            out, (None, [i18n_message("wide_to_long.badColumns.valcolname.conflict")]),
+            out,
+            (None, [i18n_message("wide_to_long.badColumns.valcolname.conflict")]),
         )
 
     def test_wide_to_long_mixed_value_types(self):
@@ -151,6 +156,27 @@ class TestReshape(unittest.TestCase):
                 }
             ),
         )
+
+    def test_long_to_wide_nix_unused_category(self):
+        # https://www.pivotaltracker.com/story/show/174929299
+        in_table = pd.DataFrame(
+            {"A": list("aab"), "B": [None, None, "c"], "value": list("abc")},
+            dtype="category",
+        )
+        out = render(
+            in_table, P("longtowide", ["A"], ltw_varcolname="B"), **DefaultKwargs
+        )
+        assert_frame_equal(
+            out[0],
+            pd.DataFrame(
+                {
+                    "A": pd.Series(["b"], dtype="category"),
+                    "c": ["c"],
+                }
+            ),
+        )
+        # There's also a long_to_wide.badRows.emptyColumnHeaders.warning, but that's
+        # not under test here
 
     def test_long_to_wide_missing_varcol(self):
         out = render(

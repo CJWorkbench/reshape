@@ -169,6 +169,11 @@ def long_to_wide(
     table = table.unstack()
     table.columns = [col[-1] for col in table.columns.values]
     table.reset_index(inplace=True)
+    for key_colname in key_colnames:
+        key_series = table[key_colname]
+        if hasattr(key_series, "cat"):
+            # Remove unused categories
+            key_series.cat.remove_unused_categories(inplace=True)
 
     if warnings:
         return (table, warnings)
@@ -354,7 +359,10 @@ def transpose(table, params, *, input_columns):
                             {"column_name": '"%s"' % column},
                         ),
                         "action": "prependModule",
-                        "args": ["converttotext", {"colnames": [column]},],
+                        "args": [
+                            "converttotext",
+                            {"colnames": [column]},
+                        ],
                     }
                 ],
             }
@@ -393,7 +401,10 @@ def transpose(table, params, *, input_columns):
                                 {"n_columns": len(to_convert)},
                             ),
                             "action": "prependModule",
-                            "args": ["converttotext", {"colnames": to_convert},],
+                            "args": [
+                                "converttotext",
+                                {"colnames": to_convert},
+                            ],
                         }
                     ],
                 }
