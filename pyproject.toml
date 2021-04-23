@@ -55,5 +55,5 @@ deps =
   pytest~=6.0
 commands =
   pip install -q .
-  pytest -v
+  pytest -v -s
 """
